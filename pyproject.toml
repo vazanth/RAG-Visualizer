@@ -1,0 +1,19 @@
+[project]
+name = "rag-visualizer"
+version = "0.1.0"
+description = "An X-Ray machine for RAG — visualize and compare chunking, embeddings, and retrieval across local models."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.34.0",
+    "pydantic>=2.0",
+    "chromadb>=1.0.0",
+    "tiktoken>=0.9.0",
+    "httpx>=0.28.0",
+    "langchain-text-splitters>=1.1.2",
+    "nltk>=3.9.4",
+    "umap-learn>=0.5.12",
+    "numpy>=2.4.4",
+    "ollama>=0.6.2",
+]
