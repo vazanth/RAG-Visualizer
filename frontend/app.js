@@ -1071,9 +1071,6 @@ function showTooltip(chunk, x, y) {
     chunk.text.length > 80 ? chunk.text.slice(0, 80) + "..." : chunk.text;
   const coordsStr = `[${chunk.coords_2d[0].toFixed(2)}, ${chunk.coords_2d[1].toFixed(2)}]`;
 
-  tooltip.style.display = "block";
-  tooltip.style.left = `${x + 15}px`;
-  tooltip.style.top = `${y + 15}px`;
   tooltip.innerHTML = `
     <div class="vector-tooltip-title">
       <span>${chunk.id}</span>
@@ -1084,6 +1081,21 @@ function showTooltip(chunk, x, y) {
     </div>
     <div class="vector-tooltip-text">${escapeHtml(snippet)}</div>
   `;
+  tooltip.style.display = "block";
+
+  let left = x + 15;
+  let top = y + 15;
+  const canvasRect = dom.vectorCanvas.getBoundingClientRect();
+
+  if (left + tooltip.offsetWidth > canvasRect.width) {
+    left = x - tooltip.offsetWidth - 15;
+  }
+  if (top + tooltip.offsetHeight > canvasRect.height) {
+    top = y - tooltip.offsetHeight - 15;
+  }
+
+  tooltip.style.left = `${left}px`;
+  tooltip.style.top = `${top}px`;
 }
 
 function hideTooltip() {

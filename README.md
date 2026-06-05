@@ -49,35 +49,39 @@ Visualize and compare **5 chunking strategies** side-by-side:
 ## 🏗️ Architecture
 
 ```mermaid
-graph TB
-    subgraph Frontend ["Frontend (Vanilla HTML/CSS/JS)"]
-        UI[index.html] --> JS[app.js]
-        UI --> CSS[styles.css]
-        JS -->|Canvas 2D API| Canvas[Vector Space Renderer]
-        JS -->|DOM Manipulation| XRay[Document X-Ray Viewer]
-    end
+flowchart LR
 
-    subgraph Backend ["Backend (FastAPI + Python)"]
-        API[FastAPI Server] --> ChunkRouter["/api/chunk"]
-        API --> RetrievalRouter["/api/retrieve"]
+    %% Ingestion Flow
+    DOC["📄 Input Document"] --> CHUNK["✂️ Chunking Engine<br/>5 Chunking Strategies"]
 
-        ChunkRouter --> ChunkEngine[Chunking Engine]
-        ChunkRouter --> EmbedEngine[Embedding Engine]
-        ChunkRouter --> Reducer[UMAP Reducer]
-        ChunkRouter --> VStore[Vector Store]
+    CHUNK --> SPLIT["📝 LangChain + NLTK<br/>Text Splitters"]
 
-        RetrievalRouter --> EmbedEngine
-        RetrievalRouter --> VStore
+    SPLIT --> EMBED["🧠 Embedding Engine<br/>Generate Semantic Vectors"]
 
-        ChunkEngine -->|5 Strategies| Splitters[LangChain + NLTK Splitters]
-        EmbedEngine -->|HTTP| Ollama[Ollama API :11434]
-        Reducer --> UMAP[umap-learn]
-        VStore --> ChromaDB[(ChromaDB)]
-    end
+    EMBED --> OLLAMA["🤖 Ollama API<br/>Embedding Model"]
 
-    JS -->|fetch /api/chunk| ChunkRouter
-    JS -->|fetch /api/retrieve| RetrievalRouter
-    API -->|Static Files| UI
+    EMBED --> UMAP["📉 UMAP<br/>2D Vector Projection"]
+
+    UMAP --> DB["🗄️ ChromaDB<br/>Vector Storage"]
+
+    %% Retrieval Flow
+    USER["👤 User Query"] --> QEMBED["🧠 Query Embedding"]
+
+    QEMBED --> OLLAMA
+
+    QEMBED --> SEARCH["🔍 Similarity Search"]
+
+    SEARCH --> DB
+
+    DB --> RESULTS["📚 Relevant Chunks"]
+
+    %% Visualization
+    RESULTS --> XRAY["🔬 Document X-Ray Viewer"]
+
+    UMAP --> VIS["📊 Vector Space Renderer"]
+
+    XRAY --> UI["🌐 Interactive Frontend"]
+    VIS --> UI
 ```
 
 ### Data Flow
@@ -279,13 +283,7 @@ Returns the list of available chunking strategies.
 | **Vector Database**          | ChromaDB (persistent)          | Cosine similarity search with HNSW index                |
 | **Package Manager**          | uv                             | Dependency management & virtual environments            |
 
-## 📝 License
-
-This project is for educational and personal use.
-
----
-
-## 🙏 Acknowledgements
+## Technologies
 
 - [Ollama](https://ollama.com/) — Local LLM inference
 - [ChromaDB](https://www.trychroma.com/) — Open-source vector database
