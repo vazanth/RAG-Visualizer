@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="RAG Visualizer — An X-Ray machine for RAG pipelines. Visualize and compare chunking strategies." />
+  <title>RAG Visualizer — Chunking Lab</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <div class="app-wrapper">
+
+    <!-- ========== HEADER ========== -->
+    <header class="app-header">
+      <div class="app-logo">
+        <div class="app-logo-icon">🔬</div>
+        <div class="app-logo-text">RAG <span>Visualizer</span></div>
+      </div>
+    </header>
+
+    <!-- ========== MAIN 3-COLUMN LAYOUT ========== -->
+    <main class="app-main">
+
+      <!-- ===== LEFT PANEL: Configuration ===== -->
+      <aside class="panel" id="config-panel">
+        <div class="panel-header">
+          <h2><span class="icon">⚙️</span> Configuration</h2>
+        </div>
+        <div class="panel-body">
+
+          <!-- Text Input -->
+          <div class="config-section">
+            <div class="config-section-title">Input Text</div>
+            <div class="text-input-wrapper">
+              <textarea
+                id="text-input"
+                class="text-input"
+                placeholder="Paste your text here to visualize chunking strategies..."
+                spellcheck="false"
+              ></textarea>
+              <span class="char-count" id="char-count">0 chars</span>
+            </div>
+          </div>
+
+          <!-- Strategy Selector -->
+          <div class="config-section">
+            <div class="config-section-title">Chunking Strategy</div>
+            <div class="strategy-grid" id="strategy-grid">
+              <label class="strategy-card active" data-strategy="fixed_size">
+                <input type="radio" name="strategy" value="fixed_size" checked />
+                <div class="strategy-card-icon">📏</div>
+                <div class="strategy-card-name">Fixed Size</div>
+                <div class="strategy-card-desc">Cut every N tokens</div>
+              </label>
+              <label class="strategy-card" data-strategy="sentence">
+                <input type="radio" name="strategy" value="sentence" />
+                <div class="strategy-card-icon">💬</div>
+                <div class="strategy-card-name">Sentence</div>
+                <div class="strategy-card-desc">Split on boundaries</div>
+              </label>
+              <label class="strategy-card" data-strategy="recursive">
+                <input type="radio" name="strategy" value="recursive" />
+                <div class="strategy-card-icon">🔄</div>
+                <div class="strategy-card-name">Recursive</div>
+                <div class="strategy-card-desc">Hierarchy of separators</div>
+              </label>
+              <label class="strategy-card" data-strategy="parent_child">
+                <input type="radio" name="strategy" value="parent_child" />
+                <div class="strategy-card-icon">🌳</div>
+                <div class="strategy-card-name">Parent-Child</div>
+                <div class="strategy-card-desc">Nested chunking</div>
+              </label>
+              <label class="strategy-card" data-strategy="semantic">
+                <input type="radio" name="strategy" value="semantic" />
+                <div class="strategy-card-icon">🧠</div>
+                <div class="strategy-card-name">Semantic</div>
+                <div class="strategy-card-desc">Split on topic shifts</div>
+              </label>
+            </div>
+          </div>
+
+          <!-- Standard Config Sliders -->
+          <div class="config-section" id="standard-config">
+            <div class="config-section-title">Parameters</div>
+            <div class="config-field">
+              <label>
+                Chunk Size (tokens)
+                <span class="value-badge" id="chunk-size-value">500</span>
+              </label>
+              <input type="range" id="chunk-size" min="50" max="2000" step="50" value="500" />
+            </div>
+            <div class="config-field">
+              <label>
+                Overlap (tokens)
+                <span class="value-badge" id="overlap-value">20</span>
+              </label>
+              <input type="range" id="overlap" min="0" max="500" step="10" value="20" />
+            </div>
+          </div>
+
+          <!-- Parent-Child Config (Hidden by default) -->
+          <div class="parent-child-config" id="parent-child-config">
+            <div class="pc-section-label parent">🔵 Parent Config</div>
+            <div class="config-field">
+              <label>
+                Parent Chunk Size
+                <span class="value-badge" id="parent-size-value">1000</span>
+              </label>
+              <input type="range" id="parent-size" min="100" max="4000" step="100" value="1000" />
+            </div>
+            <div class="config-field">
+              <label>
+                Parent Overlap
+                <span class="value-badge" id="parent-overlap-value">100</span>
+              </label>
+              <input type="range" id="parent-overlap" min="0" max="500" step="10" value="100" />
+            </div>
+            <div class="pc-section-label child">🟢 Child Config</div>
+            <div class="config-field">
+              <label>
+                Child Chunk Size
+                <span class="value-badge" id="child-size-value">200</span>
+              </label>
+              <input type="range" id="child-size" min="50" max="1000" step="50" value="200" />
+            </div>
+            <div class="config-field">
+              <label>
+                Child Overlap
+                <span class="value-badge" id="child-overlap-value">20</span>
+              </label>
+              <input type="range" id="child-overlap" min="0" max="200" step="10" value="20" />
+            </div>
+          </div>
+
+          <!-- Semantic Config (Hidden by default) -->
+          <div class="config-section" id="semantic-config" style="display: none;">
+            <div class="config-section-title">Semantic Settings</div>
+            <div class="config-field">
+              <label>
+                Similarity Threshold
+                <span class="value-badge" id="semantic-threshold-value">0.50</span>
+              </label>
+              <input type="range" id="semantic-threshold" min="0.1" max="1.0" step="0.05" value="0.5" />
+            </div>
+          </div>
+
+          <!-- Separators (for recursive) -->
+          <div class="config-section" id="separators-section" style="display: none;">
+            <div class="config-section-title">Separators</div>
+            <div class="separator-tags" id="separator-tags">
+              <span class="separator-tag" data-sep="\n\n"><code>\\n\\n</code><span class="remove">&times;</span></span>
+              <span class="separator-tag" data-sep="\n"><code>\\n</code><span class="remove">&times;</span></span>
+              <span class="separator-tag" data-sep=". "><code>. </code><span class="remove">&times;</span></span>
+              <span class="separator-tag" data-sep=" "><code>⎵</code><span class="remove">&times;</span></span>
+              <input type="text" class="separator-input" id="separator-input" placeholder="Add..." />
+            </div>
+          </div>
+
+          <!-- Embedding & Vector Space Config -->
+          <div class="config-section">
+            <div class="config-section-title">Vector Space Settings</div>
+            
+            <div class="config-field">
+              <label for="embedding-model">Embedding Model</label>
+              <select id="embedding-model" class="select-input">
+                <option value="nomic-embed-text" selected>Nomic Embed Text</option>
+                <option value="EmbeddingGemma">Embedding Gemma</option>
+                <option value="qwen3-embedding:0.6b">Qwen3 Embedding</option>
+              </select>
+            </div>
+
+            <div class="config-field">
+              <label>
+                UMAP n_neighbors
+                <span class="value-badge" id="n-neighbors-value">15</span>
+              </label>
+              <input type="range" id="n-neighbors" min="2" max="100" step="1" value="15" />
+            </div>
+
+            <div class="config-field">
+              <label>
+                UMAP min_dist
+                <span class="value-badge" id="min-dist-value">0.10</span>
+              </label>
+              <input type="range" id="min-dist" min="0.01" max="1.0" step="0.05" value="0.1" />
+            </div>
+          </div>
+
+          <!-- Run Button -->
+          <button class="btn-run ready" id="btn-run">
+            <span class="spinner"></span>
+            <span class="btn-text">⚡ Run Chunking</span>
+          </button>
+
+        </div>
+      </aside>
+
+      <!-- ===== CENTER PANEL: X-Ray Text Viewer & Vector Space ===== -->
+      <section class="panel xray-viewer" id="xray-panel">
+        <div class="panel-header tabs-header">
+          <div class="tab-buttons">
+            <button class="tab-btn active" data-tab="xray-tab">
+              <span class="icon">🔍</span> Document Viewer
+            </button>
+            <button class="tab-btn" data-tab="vector-tab">
+              <span class="icon">🌌</span> Vector Space 2D
+            </button>
+          </div>
+        </div>
+        
+        <!-- Tab Content 1: X-Ray Text Viewer -->
+        <div class="panel-body tab-content active" id="xray-tab">
+          <div class="empty-state" id="xray-empty">
+            <div class="empty-state-icon">🔬</div>
+            <div class="empty-state-title">Ready to Analyze</div>
+            <div class="empty-state-desc">
+              Paste your text, choose a chunking strategy, and hit <strong>Run</strong> to see how your text gets sliced.
+            </div>
+          </div>
+          <div class="xray-text-container" id="xray-text" style="display: none;"></div>
+        </div>
+
+        <!-- Tab Content 2: Vector Space 2D -->
+        <div class="panel-body tab-content" id="vector-tab" style="display: none;">
+          <div class="vector-space-container">
+            <div class="canvas-wrapper">
+              <canvas id="vector-canvas"></canvas>
+              <!-- Floating Tooltip inside canvas -->
+              <div id="vector-tooltip" class="vector-tooltip" style="display: none;"></div>
+              
+              <!-- Help overlay for canvas controls -->
+              <div class="canvas-help-overlay">
+                <span>🖱️ Drag to Pan</span>
+                <span>☸️ Scroll to Zoom</span>
+                <span>✨ Click node to select</span>
+              </div>
+            </div>
+            
+            <!-- Sonar Query Simulator Section -->
+            <div class="query-simulator-section">
+              <div class="query-section-title" style="display: flex; justify-content: space-between; align-items: center;">
+                <span>🔮 Sonar Query Simulator (RAG Retrieval)</span>
+                <button id="btn-open-arena" class="btn-sm" style="background: var(--superman-red); color: white; border: none; padding: 4px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; font-family: var(--font-sans);">⚔️ Arena Comparison</button>
+              </div>
+              <div class="query-input-wrapper">
+                <input type="text" id="query-input" placeholder="Type a concept query to fetch semantically similar chunks (e.g. 'linear regression')..." />
+                <button id="btn-query" class="btn-query">🔍 Query</button>
+              </div>
+              <div class="query-results-drawer" id="query-results-drawer" style="display: none;">
+                <div class="drawer-header">
+                  <h3>Retrieved Context</h3>
+                  <span class="close-drawer" id="close-drawer">&times;</span>
+                </div>
+                <div class="query-results-list" id="query-results-list">
+                  <!-- Retrieved chunks will go here -->
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== RIGHT PANEL: Chunk Inspector ===== -->
+      <aside class="panel" id="inspector-panel">
+        <div class="panel-header">
+          <h2><span class="icon">📊</span> Chunk Inspector</h2>
+        </div>
+        <div class="panel-body">
+          <!-- Stats -->
+          <div class="stats-grid" id="stats-grid">
+            <div class="stat-card">
+              <div class="stat-value" id="stat-total">—</div>
+              <div class="stat-label">Total Chunks</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value" id="stat-avg-tokens">—</div>
+              <div class="stat-label">Avg Tokens</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value" id="stat-total-tokens">—</div>
+              <div class="stat-label">Total Tokens</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value" id="stat-strategy">—</div>
+              <div class="stat-label">Strategy</div>
+            </div>
+          </div>
+
+          <!-- Chunk List -->
+          <div class="config-section-title">Chunks</div>
+          <div class="chunk-list" id="chunk-list">
+            <div class="empty-state" style="min-height: 200px;">
+              <div class="empty-state-desc">Run chunking to see results here</div>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- ===== THE ARENA MODAL ===== -->
+      <div id="arena-modal" class="arena-modal-overlay" style="display: none;">
+        <div class="arena-modal-content">
+          <div class="arena-header">
+            <h2>⚔️ The Grand Comparison Arena</h2>
+            <button id="btn-close-arena" class="btn-close-arena">&times;</button>
+          </div>
+          
+          <div class="arena-query-bar">
+            <input type="text" id="arena-query-input" placeholder="Type a query to compare configurations (e.g., 'What is Clark Kent's weakness?')..." />
+            <button class="btn-run" id="btn-arena-fight" style="width: 150px; flex-shrink: 0;">🔥 FIGHT!</button>
+          </div>
+
+          <div class="arena-body">
+            <div class="arena-columns">
+              <!-- COLUMN A -->
+              <div class="arena-col">
+                <div class="arena-col-header">
+                  <h3>Corner A</h3>
+                  <div class="arena-config-row">
+                    <select id="arena-model-a" class="select-input">
+                      <option value="nomic-embed-text">Nomic Embed</option>
+                      <option value="EmbeddingGemma">Gemma Embed</option>
+                      <option value="qwen3-embedding:0.6b">Qwen3 Embed</option>
+                    </select>
+                    <select id="arena-strategy-a" class="select-input">
+                      <option value="fixed_size">Fixed Size</option>
+                      <option value="sentence">Sentence</option>
+                      <option value="recursive">Recursive</option>
+                      <option value="semantic">Semantic</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="arena-results-list" id="arena-results-a">
+                  <div style="text-align: center; color: var(--text-tertiary); padding: 2rem;">Awaiting challengers...</div>
+                </div>
+              </div>
+
+              <!-- COLUMN B -->
+              <div class="arena-col">
+                <div class="arena-col-header" style="border-bottom-color: var(--info-color);">
+                  <h3>Corner B</h3>
+                  <div class="arena-config-row">
+                    <select id="arena-model-b" class="select-input">
+                      <option value="nomic-embed-text">Nomic Embed</option>
+                      <option value="EmbeddingGemma">Gemma Embed</option>
+                      <option value="qwen3-embedding:0.6b">Qwen3 Embed</option>
+                    </select>
+                    <select id="arena-strategy-b" class="select-input">
+                      <option value="fixed_size">Fixed Size</option>
+                      <option value="sentence">Sentence</option>
+                      <option value="recursive">Recursive</option>
+                      <option value="semantic">Semantic</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="arena-results-list" id="arena-results-b">
+                  <div style="text-align: center; color: var(--text-tertiary); padding: 2rem;">Awaiting challengers...</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- THE AI REFEREE PANEL (TASK 5.1) -->
+            <div class="arena-referee-panel" id="arena-referee-panel" style="display: none;">
+              <div class="referee-divider">
+                <span class="referee-badge">⚖️ THE AI REFEREE</span>
+              </div>
+              
+              <div class="referee-trigger-box" id="referee-trigger-box">
+                <p class="referee-prompt-text">Call upon the local Gemma model to analyze, score, and judge both contexts!</p>
+                <button class="btn-run" id="btn-call-referee" style="margin: 0 auto; display: block; max-width: 250px;">⚖️ CALL THE REFEREE</button>
+              </div>
+
+              <!-- Loading scanner status -->
+              <div class="referee-loading-box" id="referee-loading-box" style="display: none;">
+                <div class="skeleton-loader" style="max-width: 400px; margin: 0 auto 1rem; border-radius: 6px;"></div>
+                <div class="referee-status-text" id="referee-status-text">Summoning Gemma to review the case...</div>
+              </div>
+
+              <!-- Scorecard Verdict Display -->
+              <div class="referee-verdict-box" id="referee-verdict-box" style="display: none;"></div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

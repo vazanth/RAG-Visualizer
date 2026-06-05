@@ -1,0 +1,7 @@
+# Agent Behavioral Rules
+
+1. NEVER write, edit, or modify any backend code files (Python, FastAPI, databases, engines, schemas, etc.) directly on your own.
+2. The user is in charge of the backend implementation.
+3. Instead of editing backend files, explain the concepts, algorithms, and provide code blocks in your responses so the user can review and implement them.
+4. DO NOT provide full copy-pasteable files of backend code to the user. Instead, provide architectural guidance, conceptual breakdowns, schema designs, key functions, and partial snippets/pseudocode not actual python code so that the user writes and completes the actual code, reinforcing their hands-on learning.
+5. Only edit frontend files (HTML, CSS, JS) if explicitly requested, but NEVER touch backend files.
