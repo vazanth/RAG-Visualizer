@@ -29,5 +29,11 @@ class VectorStore:
         collection = self.get_collection(collection_name)
 
         return await asyncio.to_thread(
-            collection.query, query_embeddings=embeddings, n_results=n_results
+            collection.query,
+            query_embeddings=embeddings,
+            n_results=n_results,
         )
+
+    async def get_all_documents(self, collection_name: str):
+        collection = self.get_collection(collection_name)
+        return await asyncio.to_thread(collection.get)

@@ -698,6 +698,25 @@ input[type="range"]::-moz-range-thumb {
 /* ============================================================
    RETRIEVAL X-RAY HIGHLIGHTS (TASK 3.4)
    ============================================================ */
+/* --- Select Dropdown Styling --- */
+.select-input {
+  padding: 8px 12px;
+  background-color: var(--bg-input);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: 0.8rem;
+  outline: none;
+  transition: all var(--transition-base);
+  cursor: pointer;
+}
+
+.select-input:focus {
+  border-color: var(--superman-blue);
+  box-shadow: 0 0 0 2px var(--superman-blue-muted);
+}
+
 .xray-content.search-active .chunk-highlight {
   opacity: 0.3;
   transition: all 0.3s ease;

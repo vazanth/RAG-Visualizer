@@ -72,6 +72,7 @@ const dom = {
   // Query Simulator elements
   queryInput: $("#query-input"),
   btnQuery: $("#btn-query"),
+  queryRetrievalMode: $("#query-retrieval-mode"),
   queryResultsDrawer: $("#query-results-drawer"),
   queryResultsList: $("#query-results-list"),
   closeDrawer: $("#close-drawer"),
@@ -1201,6 +1202,7 @@ async function runQuerySimulator() {
         embedding_model: state.config.embedding_model,
         strategy: state.strategy,
         top_k: 3,
+        retrieval_mode: dom.queryRetrievalMode ? dom.queryRetrievalMode.value : "dense",
       }),
     });
 
@@ -1340,6 +1342,7 @@ const domArena = {
   modelB: document.getElementById("arena-model-b"),
   strategyB: document.getElementById("arena-strategy-b"),
   resultsB: document.getElementById("arena-results-b"),
+  retrievalMode: document.getElementById("arena-retrieval-mode"),
 };
 
 if (domArena.btnOpen) {
@@ -1389,6 +1392,7 @@ if (domArena.btnFight) {
           strategy_a: domArena.strategyA.value,
           model_b: domArena.modelB.value,
           strategy_b: domArena.strategyB.value,
+          retrieval_mode: domArena.retrievalMode ? domArena.retrievalMode.value : "dense",
         }),
       });
 

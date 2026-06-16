@@ -1,1 +1,1 @@
-uv run uvicorn backend.main:app --reload --port 8080
+uv run uvicorn backend.main:app --reload --port 8000
