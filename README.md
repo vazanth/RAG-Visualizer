@@ -4,6 +4,8 @@
 
 RAG Visualizer is an interactive, local-first tool that lets you **see** what happens inside a RAG pipeline — from how your text gets chunked, to how those chunks land in vector space, to which chunks get retrieved for a given query. No cloud APIs, no black boxes. Everything runs on your machine with local Ollama models.
 
+![RAG Visualizer Demo](assets/x_ray-visualizer.gif)
+
 ---
 
 ## ✨ Features
@@ -38,11 +40,20 @@ Visualize and compare **5 chunking strategies** side-by-side:
 - **Sonar Probe** — click anywhere on the canvas to find the nearest chunks by 2D proximity
 - **Document X-Ray Highlighting** — retrieved chunks glow in the original text with rank-based styling (gold for Rank 1, dashed for Rank 2, dotted for Rank 3)
 
-### 📐 Phase 4 — Adaptive Thresholding
+### ⚔️ Phase 3.2 — LLM-as-a-Judge (The Grand Arena)
 
-- Semantic chunking uses a **gradient derivative method** instead of a static threshold
-- Computes mean + z-score-scaled standard deviation of inter-sentence embedding distances
-- The slider controls the z-score multiplier, making the boundary detection adaptive to each document's unique distribution
+- **Side-by-Side Comparison** — Compare retrieval results from two different models/strategies in a split-screen arena
+- **AI Referee** — Call upon a local Ollama model to evaluate, rank, and score retrieved contexts
+- **Multi-Dimensional Scorecard** — Referee grades chunks on Relevance, Completeness, Factual Plausibility, and Clarity
+- **Pydantic Validator Guardrails** — Validates the referee's output to catch and override arithmetic lies and position bias
+
+![Grand Arena Comparison](assets/arena_comparison.gif)
+
+### 📐 Phase 4 — Adaptive Thresholding (Gradient Fix)
+
+- Semantic chunking uses an **adaptive gradient derivative / peak detection** algorithm instead of a static threshold split
+- Computes the dynamic threshold based on document-wide mean and standard deviation of inter-sentence embedding distances
+- Uses local maxima peak detection to prevent fragmenting paragraphs, ensuring splits only happen at true topic shift peaks
 
 ---
 
@@ -264,9 +275,40 @@ Embeds a query and retrieves the top-K most similar chunks from ChromaDB.
 
 **Response:** `QueryResponse` with query coordinates, retrieved chunks, and distance scores.
 
-### `GET /api/strategies`
+### `POST /api/compare`
 
-Returns the list of available chunking strategies.
+Compares retrieval results from two different configurations side-by-side.
+
+**Request Body:**
+
+```json
+{
+  "search_text": "query",
+  "top_k": 3,
+  "model_a": "nomic-embed-text",
+  "strategy_a": "fixed_size",
+  "model_b": "EmbeddingGemma",
+  "strategy_b": "semantic"
+}
+```
+
+**Response:** `CompareResponse` containing results from both configuration A and configuration B.
+
+### `POST /api/judge`
+
+Submits retrieval results to a local LLM judge for evaluation and scoring.
+
+**Request Body:**
+
+```json
+{
+  "search_query": "query",
+  "chunk_a": "text of chunk a",
+  "chunk_b": "text of chunk b"
+}
+```
+
+**Response:** `JudgeResponse` with winner declaration, confidence, scorecards, strengths, and weaknesses.
 
 ---
 
