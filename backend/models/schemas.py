@@ -96,7 +96,6 @@ class RetrievedChunk(BaseModel):
     end_char: int
     parent_id: Optional[str] = None
     level: int = 0
-    text_highlighted: Optional[str] = None
 
 
 class QueryResponse(BaseModel):
@@ -124,67 +123,3 @@ class CompareResponse(BaseModel):
     results_a: List[RetrievedChunk]
     results_b: List[RetrievedChunk]
     hypothetical_answer: Optional[str] = None
-
-
-class JudgeRequest(BaseModel):
-    search_query: str
-    chunk_a: str
-    chunk_b: str
-
-
-class ChunkScore(BaseModel):
-    query_relevance: int = Field(ge=1, le=10)
-    answer_completeness: int = Field(ge=1, le=10)
-    factual_plausibility: int = Field(ge=1, le=10)
-    clarity: int = Field(ge=1, le=10)
-    overall: float
-
-    @model_validator(mode="after")
-    def check_overall(self) -> "ChunkScore":
-        expected = round(
-            (
-                self.query_relevance
-                + self.answer_completeness
-                + self.factual_plausibility
-                + self.clarity
-            )
-            / 4,
-            2,
-        )
-        
-        # Log the discrepancy if the LLM's math is wrong
-        if abs(self.overall - expected) > 0.01:
-            print(f"\n\033[93m[JUDGE RAW] overall: {self.overall} (dims: query_relevance={self.query_relevance}, answer_completeness={self.answer_completeness}, factual_plausibility={self.factual_plausibility}, clarity={self.clarity})\033[0m")
-            print(f"\033[91m[VALIDATOR] expected overall: {expected} → overriding LLM's claimed {self.overall}\033[0m\n")
-            
-        self.overall = expected
-        return self
-
-
-class JudgeResponse(BaseModel):
-    winner: Literal["chunk_a", "chunk_b", "tie"]
-    confidence: float = Field(ge=0, le=1)
-
-    chunk_a_score: ChunkScore
-    chunk_b_score: ChunkScore
-
-    winner_reason: str
-    chunk_a_strengths: List[str]
-    chunk_b_strengths: List[str]
-    chunk_a_weaknesses: List[str]
-    chunk_b_weaknesses: List[str]
-    deciding_dimension: str
-
-    @model_validator(mode="after")
-    def check_winner_consistency(self) -> "JudgeResponse":
-        a = self.chunk_a_score.overall
-        b = self.chunk_b_score.overall
-        gap = abs(a - b)
-
-        if gap <= 0.5:
-            self.winner = "tie"
-        elif a > b:
-            self.winner = "chunk_a"
-        else:
-            self.winner = "chunk_b"
-        return self
