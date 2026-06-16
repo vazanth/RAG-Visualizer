@@ -11,12 +11,7 @@ class VectorStore:
 
     def get_collection(self, name: str):
         return self.client.get_or_create_collection(
-            name=name,
-            metadata={
-                "hnsw:space": "cosine",
-                "hnsw:construction_ef": 100,
-                "hnsw:M": 16,
-            },
+            name=name, metadata={"hnsw:space": "cosine"}
         )
 
     async def upsert(self, collection_name, ids, documents, embeddings, metadatas=None):

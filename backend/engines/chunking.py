@@ -75,7 +75,7 @@ def construct_chunk_node(text, chunks, tokenizer):
 
         # 2. If exact find fails, try a clean stripped version
         if start == -1:
-            clean_anchor = chunk.strip()
+            clean_anchor = chunk.strip()[:40]
             if clean_anchor:
                 start = text.find(clean_anchor, current_position)
 
