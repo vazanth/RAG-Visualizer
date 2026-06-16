@@ -242,7 +242,12 @@
                 <span>🔮 Sonar Query Simulator (RAG Retrieval)</span>
               </div>
               <div class="query-input-wrapper">
-                <input type="text" id="query-input" placeholder="Type a concept query to fetch semantically similar chunks (e.g. 'linear regression')..." />
+                <select id="query-retrieval-mode" class="select-input" style="width: 110px; flex-shrink: 0; display: none;">
+                  <option value="dense" selected>Dense</option>
+                  <option value="sparse">Sparse</option>
+                  <option value="hybrid">Hybrid</option>
+                </select>
+                <input type="text" id="query-input" placeholder="Type a concept query to fetch chunks (e.g. 'linear regression')..." />
                 <button id="btn-query" class="btn-query">🔍 Query</button>
               </div>
               <div class="query-results-drawer" id="query-results-drawer" style="display: none;">

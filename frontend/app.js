@@ -72,6 +72,7 @@ const dom = {
   // Query Simulator elements
   queryInput: $("#query-input"),
   btnQuery: $("#btn-query"),
+  queryRetrievalMode: $("#query-retrieval-mode"),
   queryResultsDrawer: $("#query-results-drawer"),
   queryResultsList: $("#query-results-list"),
   closeDrawer: $("#close-drawer"),
@@ -1213,6 +1214,7 @@ async function runQuerySimulator() {
         embedding_model: state.config.embedding_model,
         strategy: state.strategy,
         top_k: 3,
+        retrieval_mode: dom.queryRetrievalMode ? dom.queryRetrievalMode.value : "dense",
       }),
     });
 

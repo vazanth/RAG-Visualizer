@@ -3,7 +3,7 @@ from backend.engines import llm_client
 from backend.engines.llm_client import OllamaClient
 from backend.constants import system_instructions
 import asyncio
-from typing import Any, Optional
+from typing import Any, List, Optional
 from fastapi import APIRouter
 import json
 import re
@@ -14,6 +14,7 @@ from backend.models.schemas import (
     CompareResponse,
     QueryRequest,
     QueryResponse,
+    RetrievalMode,
     RetrievedChunk,
 )
 from backend.storage.vector_store import VectorStore
@@ -40,6 +41,7 @@ async def retrieve(request: QueryRequest):
         request.strategy,
         request.top_k,
         request.search_text,
+        request.retrieval_mode,
     )
 
     query_coords = [0.0, 0.0]
@@ -60,13 +62,27 @@ async def retrieve(request: QueryRequest):
 
 
 async def process_retrieval(
-    model, search_text, strategy, top_k, original_query: Optional[str] = None
+    model,
+    search_text,
+    strategy,
+    top_k,
+    retrieval_mode,
+    original_query: Optional[str] = None,
 ):
     vector_store = VectorStore()
     embedding_engine = EmbeddingEngine(model.value)
     embeddings = await embedding_engine.generate_embeddings([search_text])
+    collection_name = f"{model.value}_{strategy.value}".replace(":", "-")
+    retrieval_response: Any
+    if retrieval_mode == RetrievalMode.DENSE:
+        """"""
+    elif retrieval_mode == RetrievalMode.SPARSE:
+        """"""
+    elif retrieval_mode == RetrievalMode.HYBRID:
+        """"""
+
     result: Any = await vector_store.retrieve(
-        collection_name=f"{model.value}_{strategy.value}".replace(":", "-"),
+        collection_name=collection_name,
         embeddings=embeddings,
         n_results=top_k,
     )
