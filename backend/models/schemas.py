@@ -151,6 +151,12 @@ class ChunkScore(BaseModel):
             / 4,
             2,
         )
+        
+        # Log the discrepancy if the LLM's math is wrong
+        if abs(self.overall - expected) > 0.01:
+            print(f"\n\033[93m[JUDGE RAW] overall: {self.overall} (dims: query_relevance={self.query_relevance}, answer_completeness={self.answer_completeness}, factual_plausibility={self.factual_plausibility}, clarity={self.clarity})\033[0m")
+            print(f"\033[91m[VALIDATOR] expected overall: {expected} → overriding LLM's claimed {self.overall}\033[0m\n")
+            
         self.overall = expected
         return self
 

@@ -3,7 +3,7 @@ from backend.engines import llm_client
 from backend.engines.llm_client import OllamaClient
 from backend.constants import system_instructions
 import asyncio
-from typing import Any, Optional
+from typing import Any, List, Optional
 from fastapi import APIRouter
 import json
 import re
@@ -16,6 +16,7 @@ from backend.models.schemas import (
     JudgeRequest,
     QueryRequest,
     QueryResponse,
+    RetrievalMode,
     RetrievedChunk,
 )
 from backend.storage.vector_store import VectorStore
@@ -48,6 +49,7 @@ async def retrieve(request: QueryRequest):
         request.strategy,
         request.top_k,
         request.search_text,
+        request.retrieval_mode,
     )
 
     query_coords = [0.0, 0.0]
@@ -116,21 +118,33 @@ async def judge(request: JudgeRequest):
     llm_client = OllamaClient()
     result = await llm_client.generate(prompt=prompt)
 
-    print(f"res:res: {result}")
-
     result_dict = json.loads(result)
 
     return JudgeResponse(**result_dict)
 
 
 async def process_retrieval(
-    model, search_text, strategy, top_k, original_query: Optional[str] = None
+    model,
+    search_text,
+    strategy,
+    top_k,
+    retrieval_mode,
+    original_query: Optional[str] = None,
 ):
     vector_store = VectorStore()
     embedding_engine = EmbeddingEngine(model.value)
     embeddings = await embedding_engine.generate_embeddings([search_text])
+    collection_name = f"{model.value}_{strategy.value}".replace(":", "-")
+    retrieval_response: Any
+    if retrieval_mode == RetrievalMode.DENSE:
+        """"""
+    elif retrieval_mode == RetrievalMode.SPARSE:
+        """"""
+    elif retrieval_mode == RetrievalMode.HYBRID:
+        """"""
+
     result: Any = await vector_store.retrieve(
-        collection_name=f"{model.value}_{strategy.value}".replace(":", "-"),
+        collection_name=collection_name,
         embeddings=embeddings,
         n_results=top_k,
     )
@@ -189,3 +203,15 @@ async def get_hyde_text(search_text):
     llm_client = OllamaClient()
     hyde_prompt.format(search_text=search_text)
     return await llm_client.generate(hyde_prompt, response_format=None)
+
+
+def rrf(dense_ranks: List[str], sparse_ranks: List[str], k: int = 60) -> List[tuple]:
+    rrf_scores = {}
+
+    for rank, doc_id in enumerate(dense_ranks):
+        rrf_scores[doc_id] = rrf_scores.get(doc_id, 0.0) + 1.0 / (k + rank + 1)
+
+    for rank, doc_id in enumerate(sparse_ranks):
+        rrf_scores[doc_id] = rrf_scores.get(doc_id, 0.0) + 1.0 / (k + rank + 1)
+
+    return sorted(rrf_scores.items(), key=lambda x: x[1], reverse=True)
