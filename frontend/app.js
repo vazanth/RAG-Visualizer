@@ -1457,7 +1457,8 @@ const domArena = {
   modelB: document.getElementById("arena-model-b"),
   strategyB: document.getElementById("arena-strategy-b"),
   resultsB: document.getElementById("arena-results-b"),
-  retrievalMode: document.getElementById("arena-retrieval-mode"),
+  retrievalModeA: document.getElementById("arena-retrieval-mode-a"),
+  retrievalModeB: document.getElementById("arena-retrieval-mode-b"),
 };
 
 if (domArena.btnOpen) {
@@ -1522,7 +1523,8 @@ if (domArena.btnFight) {
           strategy_a: domArena.strategyA.value,
           model_b: domArena.modelB.value,
           strategy_b: domArena.strategyB.value,
-          retrieval_mode: domArena.retrievalMode ? domArena.retrievalMode.value : "dense",
+          retrieval_mode_a: domArena.retrievalModeA ? domArena.retrievalModeA.value : "dense",
+          retrieval_mode_b: domArena.retrievalModeB ? domArena.retrievalModeB.value : "dense",
           use_hyde: useHyde,
           use_reranking: useReranking,
           metadata: whereClause,
@@ -1558,7 +1560,7 @@ if (domArena.btnFight) {
               ${getRankShiftBadgeHtml(chunk.original_rank, i + 1)}
             </span>
             <span class="dist-badge">
-              ${formatScoreHtml(chunk.score, chunk.original_score, domArena.retrievalMode ? domArena.retrievalMode.value : "dense", useReranking)}
+              ${formatScoreHtml(chunk.score, chunk.original_score, domArena.retrievalModeA ? domArena.retrievalModeA.value : "dense", useReranking)}
             </span>
           </div>
           <div class="query-result-text">${chunk.text_highlighted || escapeHtml(chunk.text)}</div>
@@ -1581,7 +1583,7 @@ if (domArena.btnFight) {
               ${getRankShiftBadgeHtml(chunk.original_rank, i + 1)}
             </span>
             <span class="dist-badge">
-              ${formatScoreHtml(chunk.score, chunk.original_score, domArena.retrievalMode ? domArena.retrievalMode.value : "dense", useReranking)}
+              ${formatScoreHtml(chunk.score, chunk.original_score, domArena.retrievalModeB ? domArena.retrievalModeB.value : "dense", useReranking)}
             </span>
           </div>
           <div class="query-result-text">${chunk.text_highlighted || escapeHtml(chunk.text)}</div>

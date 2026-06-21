@@ -117,7 +117,8 @@ class CompareRequest(BaseModel):
     model_b: EmbeddingModel
     strategy_b: Strategy
 
-    retrieval_mode: RetrievalMode = RetrievalMode.DENSE
+    retrieval_mode_a: RetrievalMode = RetrievalMode.DENSE
+    retrieval_mode_b: RetrievalMode = RetrievalMode.DENSE
     use_hyde: bool = False
     use_reranking: bool = False
     metadata: Optional[Dict[str, Any]] = None
