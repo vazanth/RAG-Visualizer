@@ -1,7 +1,7 @@
 import math
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
-from backend.routers.retrieval_router import get_keywords
+from backend.utils import get_keywords
 
 
 class BM25Engine:
@@ -58,10 +58,21 @@ class BM25Engine:
 
         return total_score
 
-    def search(self, query: str, top_k: int = 3) -> list:
+    def search(
+        self, query: str, top_k: int = 3, where: Optional[Dict[str, Any]] = None
+    ) -> list:
         scores = []
         # Score all docs
         for idx in range(self.corpus_size):
+            if where:
+                match = True
+                doc_meta = self.metadatas[idx] or {}
+                for key, val in where.items():
+                    if doc_meta.get(key) != val:
+                        match = False
+                        break
+                if not match:
+                    continue
             s = self.score(query, idx)
             scores.append((s, idx))
 

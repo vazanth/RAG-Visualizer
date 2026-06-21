@@ -22,38 +22,44 @@ Visualize and compare **5 chunking strategies** side-by-side:
 | **Parent-Child** | Two-level nested chunking — large parent windows with smaller child chunks inside |
 | **Semantic**     | Detects topic shifts using embedding similarity + adaptive thresholding           |
 
-- **Document X-Ray Viewer** — Original text with color-coded chunk boundaries and overlap regions
-- **Chunk Inspector** — Stats panel showing total chunks, average token count, and per-chunk metadata
+- **Document X-Ray Viewer** — Original text with color-coded chunk boundaries and overlap regions.
+- **Chunk Inspector** — Stats panel showing total chunks, average token count, and per-chunk metadata.
+- **File Uploader** — Attach and parse custom text or markdown documents directly in the configuration panel.
 
 ### 🌌 Phase 2 — Embedding Lab
 
-- Generate embeddings using **3 local Ollama embedding models** (Nomic Embed Text, Embedding Gemma, Qwen3 Embedding)
-- **UMAP dimensionality reduction** projects high-dimensional embeddings down to 2D
-- **Interactive Canvas** with pan, zoom, hover tooltips, and click-to-select
-- Parent-child connection lines visualized in vector space
+- Generate embeddings using **3 local Ollama embedding models** (Nomic Embed Text, Embedding Gemma, Qwen3 Embedding).
+- **UMAP dimensionality reduction** projects high-dimensional embeddings down to 2D.
+- **Interactive Canvas** with pan, zoom, hover tooltips, and click-to-select. Drag-panning is isolated from clicks to ensure smooth navigation without losing focus.
+- Parent-child connection lines visualized in vector space.
 
-### 🔍 Phase 3 — Retrieval
+### 🔍 Phase 3 — Advanced Retrieval & Reranking
 
-- **ChromaDB** persistent vector store — chunks are indexed on every run
-- **Sonar Query Simulator** — type a natural language query and watch the retrieval happen in real time
-- Retrieved chunks render as ranked result cards with distance scores
-- **Sonar Probe** — click anywhere on the canvas to find the nearest chunks by 2D proximity
-- **Document X-Ray Highlighting** — retrieved chunks glow in the original text with rank-based styling (gold for Rank 1, dashed for Rank 2, dotted for Rank 3)
+- **ChromaDB** persistent vector store — chunks are indexed on every run.
+- **Flexible Retrieval Modes** — Switch dynamically between **Dense** (vector similarity), **Sparse** (BM25 lexical search), or **Hybrid** (RRF fusion) search paths.
+- **Sonar Query Simulator** — Type a natural language query and watch the sonar ping animate across the canvas in real time.
+- **Sonar Probe** — Click anywhere on the 2D canvas to retrieve the nearest chunks in that region.
+- **Document X-Ray Highlighting** — Retrieved chunks glow dynamically in the document viewer with rank-based styling (gold for Rank 1, dashed for Rank 2, dotted for Rank 3).
+- **Metadata Level Filtering** — Filter your context pool on the fly (retrieve *Only Parents*, *Only Children*, or *All Levels*).
+- **Cross-Encoder Reranking** — Run a local FlashRank (`ms-marco-MiniLM-L-12-v2`) engine to rerank search results.
+- **Rank Shift Badges** — Visual indicators showing exactly how much chunks moved after reranking (`▲ +3`, `▼ -1`, or `• Unchanged`).
+- **Normalized Match Strength** — Converts raw vector distances into intuitive similarity percentages (e.g. `Match: 87.7%`).
+- **Reranking Lineage** — Displays the pre-reranked retrieval score for comparison (e.g. `Match: 95.0% (was Match: 87.7%)`).
 
 ### ⚔️ Phase 3.2 — LLM-as-a-Judge (The Grand Arena)
 
-- **Side-by-Side Comparison** — Compare retrieval results from two different models/strategies in a split-screen arena
-- **AI Referee** — Call upon a local Ollama model to evaluate, rank, and score retrieved contexts
-- **Multi-Dimensional Scorecard** — Referee grades chunks on Relevance, Completeness, Factual Plausibility, and Clarity
-- **Pydantic Validator Guardrails** — Validates the referee's output to catch and override arithmetic lies and position bias
+- **Side-by-Side Comparison** — Compare retrieval results from two different models/strategies in a split-screen arena.
+- **AI Referee** — Call upon a local Ollama model to evaluate, rank, and score retrieved contexts.
+- **Multi-Dimensional Scorecard** — Referee grades chunks on Relevance, Completeness, Factual Plausibility, and Clarity.
+- **Pydantic Validator Guardrails** — Validates the referee's output to catch and override arithmetic lies and position bias.
 
 ![Grand Arena Comparison](assets/arena_comparison.gif)
 
 ### 📐 Phase 4 — Adaptive Thresholding (Gradient Fix)
 
-- Semantic chunking uses an **adaptive gradient derivative / peak detection** algorithm instead of a static threshold split
-- Computes the dynamic threshold based on document-wide mean and standard deviation of inter-sentence embedding distances
-- Uses local maxima peak detection to prevent fragmenting paragraphs, ensuring splits only happen at true topic shift peaks
+- Semantic chunking uses an **adaptive gradient derivative / peak detection** algorithm instead of a static threshold split.
+- Computes the dynamic threshold based on document-wide mean and standard deviation of inter-sentence embedding distances.
+- Uses local maxima peak detection to prevent fragmenting paragraphs, ensuring splits only happen at true topic shift peaks.
 
 ---
 
@@ -260,7 +266,7 @@ Chunks input text, generates embeddings, reduces to 2D, and stores in ChromaDB.
 
 ### `POST /api/retrieve`
 
-Embeds a query and retrieves the top-K most similar chunks from ChromaDB.
+Embeds a query and retrieves the top-K most similar chunks from ChromaDB (with optional reranking, HyDE expansion, and metadata filtering).
 
 **Request Body:**
 
@@ -269,11 +275,15 @@ Embeds a query and retrieves the top-K most similar chunks from ChromaDB.
   "search_text": "What is gradient descent?",
   "embedding_model": "nomic-embed-text",
   "strategy": "fixed_size",
-  "top_k": 3
+  "top_k": 3,
+  "retrieval_mode": "dense",
+  "use_hyde": false,
+  "use_reranking": true,
+  "metadata": { "level": 1 }
 }
 ```
 
-**Response:** `QueryResponse` with query coordinates, retrieved chunks, and distance scores.
+**Response:** `QueryResponse` with query coordinates, retrieved chunks (with original ranks and original scores populated if reranked), and hypothetical answer text if HyDE is used.
 
 ### `POST /api/compare`
 
@@ -288,7 +298,11 @@ Compares retrieval results from two different configurations side-by-side.
   "model_a": "nomic-embed-text",
   "strategy_a": "fixed_size",
   "model_b": "EmbeddingGemma",
-  "strategy_b": "semantic"
+  "strategy_b": "semantic",
+  "retrieval_mode": "dense",
+  "use_hyde": false,
+  "use_reranking": true,
+  "metadata": null
 }
 ```
 

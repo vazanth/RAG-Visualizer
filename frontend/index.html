@@ -30,8 +30,12 @@
 
           <!-- Text Input -->
           <div class="config-section">
-            <div class="config-section-title">Input Text</div>
+            <div class="config-section-title" style="display: flex; justify-content: space-between; align-items: center;">
+              <span>Input Text</span>
+              <button type="button" id="btn-upload-file" class="btn-sm" style="cursor: pointer; background: var(--superman-blue-muted); border: 1px solid var(--superman-blue); color: var(--superman-blue); padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold;">📎 Attach File</button>
+            </div>
             <div class="text-input-wrapper">
+              <input type="file" id="file-input" style="display: none;" />
               <textarea
                 id="text-input"
                 class="text-input"
@@ -243,13 +247,31 @@
                 <button id="btn-open-arena" class="btn-sm" style="background: var(--superman-red); color: white; border: none; padding: 4px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; font-family: var(--font-sans);">⚔️ Arena Comparison</button>
               </div>
               <div class="query-input-wrapper">
-                <select id="query-retrieval-mode" class="select-input" style="width: 110px; flex-shrink: 0; display: none;">
+                <select id="query-retrieval-mode" class="select-input" style="width: 110px; flex-shrink: 0;">
                   <option value="dense" selected>Dense</option>
                   <option value="sparse">Sparse</option>
                   <option value="hybrid">Hybrid</option>
                 </select>
                 <input type="text" id="query-input" placeholder="Type a concept query to fetch chunks (e.g. 'linear regression')..." />
                 <button id="btn-query" class="btn-query">🔍 Query</button>
+              </div>
+              <div class="query-options-row" style="display: flex; gap: var(--space-md); margin-top: var(--space-sm); font-size: 0.85rem; color: var(--text-secondary); align-items: center; flex-wrap: wrap;">
+                <label style="display: flex; align-items: center; gap: var(--space-xs); cursor: pointer; user-select: none;">
+                  <input type="checkbox" id="query-use-hyde" style="cursor: pointer; width: 14px; height: 14px;" />
+                  🔮 Use HyDE
+                </label>
+                <label style="display: flex; align-items: center; gap: var(--space-xs); cursor: pointer; user-select: none;">
+                  <input type="checkbox" id="query-use-reranking" style="cursor: pointer; width: 14px; height: 14px;" />
+                  ⚡ Use Re-Ranking
+                </label>
+                <div style="display: flex; align-items: center; gap: var(--space-xs); margin-left: auto;">
+                  <span style="font-size: 0.8rem; color: var(--text-tertiary);">Filter Level:</span>
+                  <select id="query-filter-level" class="select-input" style="padding: 4px 8px; font-size: 0.78rem;">
+                    <option value="all">All Levels</option>
+                    <option value="parent">Only Parents (Lvl 0)</option>
+                    <option value="child">Only Children (Lvl 1)</option>
+                  </select>
+                </div>
               </div>
               <div class="query-results-drawer" id="query-results-drawer" style="display: none;">
                 <div class="drawer-header">
@@ -310,13 +332,38 @@
           </div>
           
           <div class="arena-query-bar">
-            <select id="arena-retrieval-mode" class="select-input" style="width: 110px; flex-shrink: 0; display: none;">
+            <select id="arena-retrieval-mode" class="select-input" style="width: 110px; flex-shrink: 0;">
               <option value="dense" selected>Dense</option>
               <option value="sparse">Sparse</option>
               <option value="hybrid">Hybrid</option>
             </select>
             <input type="text" id="arena-query-input" placeholder="Type a query to compare configurations (e.g., 'What is Clark Kent's weakness?')..." />
             <button class="btn-run" id="btn-arena-fight" style="width: 150px; flex-shrink: 0;">🔥 FIGHT!</button>
+          </div>
+
+          <div class="arena-options-row" style="display: flex; gap: var(--space-md); margin: 0 0 var(--space-md) 0; padding: 0 var(--space-xl); font-size: 0.85rem; color: var(--text-secondary); justify-content: flex-start; align-items: center; flex-wrap: wrap;">
+            <label style="display: flex; align-items: center; gap: var(--space-xs); cursor: pointer; user-select: none;">
+              <input type="checkbox" id="arena-use-hyde" style="cursor: pointer; width: 14px; height: 14px;" />
+              🔮 Use HyDE
+            </label>
+            <label style="display: flex; align-items: center; gap: var(--space-xs); cursor: pointer; user-select: none;">
+              <input type="checkbox" id="arena-use-reranking" style="cursor: pointer; width: 14px; height: 14px;" />
+              ⚡ Use Re-Ranking
+            </label>
+            <div style="display: flex; align-items: center; gap: var(--space-xs); margin-left: auto;">
+              <span style="font-size: 0.8rem; color: var(--text-tertiary);">Filter Level:</span>
+              <select id="arena-filter-level" class="select-input" style="padding: 4px 8px; font-size: 0.78rem;">
+                <option value="all">All Levels</option>
+                <option value="parent">Only Parents (Lvl 0)</option>
+                <option value="child">Only Children (Lvl 1)</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Dynamic HyDE box in Arena -->
+          <div id="arena-hyde-container" style="display: none; margin: 0 var(--space-lg) var(--space-md) var(--space-lg); padding: var(--space-sm) var(--space-md); border-left: 4px solid var(--superman-blue); background-color: var(--superman-blue-muted); border-radius: var(--radius-sm);">
+            <div style="font-weight: bold; color: var(--superman-blue); font-size: 0.85rem; margin-bottom: 4px;">🔮 Generated Hypothetical Answer (HyDE)</div>
+            <div id="arena-hyde-text" style="font-style: italic; color: var(--text-primary); font-size: 0.85rem;"></div>
           </div>
 
           <div class="arena-body">

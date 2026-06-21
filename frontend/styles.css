@@ -750,6 +750,75 @@ input[type="range"]::-moz-range-thumb {
   position: relative;
 }
 
+/* Query Result Footer Metadata */
+.query-result-meta {
+  display: flex;
+  gap: var(--space-md);
+  margin-top: 6px;
+  font-size: 0.68rem;
+  color: var(--text-tertiary);
+  font-family: var(--font-mono);
+  border-top: 1px dashed var(--border-default);
+  padding-top: 4px;
+}
+
+/* Distance and Score Badges */
+.dist-badge {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  background: var(--bg-surface-raised);
+  border: 1px solid var(--border-default);
+  padding: 2px 8px;
+  border-radius: 99px;
+  color: var(--text-secondary);
+}
+
+.score-badge-val {
+  font-weight: 600;
+  color: var(--superman-blue);
+}
+
+.score-badge-original {
+  font-size: 0.65rem;
+  color: var(--text-tertiary);
+  font-style: italic;
+  margin-left: 4px;
+}
+
+/* Rank Shift Badges */
+.rank-shift-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-left: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.rank-shift-up {
+  color: #16a34a;
+  background-color: rgba(22, 163, 74, 0.08);
+  border: 1px solid rgba(22, 163, 74, 0.2);
+}
+
+.rank-shift-down {
+  color: #dc2626;
+  background-color: rgba(220, 38, 38, 0.08);
+  border: 1px solid rgba(220, 38, 38, 0.2);
+}
+
+.rank-shift-unchanged {
+  color: var(--text-tertiary);
+  background-color: var(--bg-surface-raised);
+  border: 1px solid var(--border-default);
+}
+
 /* Lexical Heatmap Highlights */
 .query-result-text mark,
 .retrieved-chunk-text mark {
