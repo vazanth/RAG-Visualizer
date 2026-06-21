@@ -332,11 +332,6 @@
           </div>
           
           <div class="arena-query-bar">
-            <select id="arena-retrieval-mode" class="select-input" style="width: 110px; flex-shrink: 0;">
-              <option value="dense" selected>Dense</option>
-              <option value="sparse">Sparse</option>
-              <option value="hybrid">Hybrid</option>
-            </select>
             <input type="text" id="arena-query-input" placeholder="Type a query to compare configurations (e.g., 'What is Clark Kent's weakness?')..." />
             <button class="btn-run" id="btn-arena-fight" style="width: 150px; flex-shrink: 0;">🔥 FIGHT!</button>
           </div>
@@ -373,6 +368,11 @@
                 <div class="arena-col-header">
                   <h3>Corner A</h3>
                   <div class="arena-config-row">
+                    <select id="arena-retrieval-mode-a" class="select-input">
+                      <option value="dense" selected>Dense</option>
+                      <option value="sparse">Sparse</option>
+                      <option value="hybrid">Hybrid</option>
+                    </select>
                     <select id="arena-model-a" class="select-input">
                       <option value="nomic-embed-text">Nomic Embed</option>
                       <option value="EmbeddingGemma">Gemma Embed</option>
@@ -383,6 +383,7 @@
                       <option value="sentence">Sentence</option>
                       <option value="recursive">Recursive</option>
                       <option value="semantic">Semantic</option>
+                      <option value="parent_child">Parent/Child</option>
                     </select>
                   </div>
                 </div>
@@ -396,6 +397,11 @@
                 <div class="arena-col-header" style="border-bottom-color: var(--info-color);">
                   <h3>Corner B</h3>
                   <div class="arena-config-row">
+                    <select id="arena-retrieval-mode-b" class="select-input">
+                      <option value="dense" selected>Dense</option>
+                      <option value="sparse">Sparse</option>
+                      <option value="hybrid">Hybrid</option>
+                    </select>
                     <select id="arena-model-b" class="select-input">
                       <option value="nomic-embed-text">Nomic Embed</option>
                       <option value="EmbeddingGemma">Gemma Embed</option>
@@ -406,6 +412,7 @@
                       <option value="sentence">Sentence</option>
                       <option value="recursive">Recursive</option>
                       <option value="semantic">Semantic</option>
+                      <option value="parent_child">Parent/Child</option>
                     </select>
                   </div>
                 </div>
