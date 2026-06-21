@@ -173,6 +173,29 @@ dom.textInput.addEventListener("input", () => {
   dom.charCount.textContent = `${state.text.length} chars`;
 });
 
+const btnUploadFile = document.getElementById("btn-upload-file");
+const fileInput = document.getElementById("file-input");
+
+if (btnUploadFile && fileInput) {
+  btnUploadFile.addEventListener("click", () => fileInput.click());
+
+  fileInput.addEventListener("change", (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function (event) {
+      const text = event.target.result;
+      dom.textInput.value = text;
+      state.text = text;
+      dom.charCount.textContent = `${text.length} chars`;
+      fileInput.value = "";
+    };
+    reader.readAsText(file);
+  });
+}
+
+
 // ============================================================
 // Strategy Selector
 // ============================================================
@@ -492,7 +515,8 @@ function renderChunkList(chunks) {
 function highlightChunk(chunkId) {
   // Highlight in X-ray viewer
   dom.xrayText.querySelectorAll(".chunk-highlight").forEach((el) => {
-    el.classList.toggle("active", el.dataset.chunkId === chunkId);
+    const ownerList = (el.dataset.allChunks || "").split(",");
+    el.classList.toggle("active", ownerList.includes(chunkId));
   });
 
   // Highlight in chunk list
@@ -542,6 +566,49 @@ function escapeHtml(str) {
   const div = document.createElement("div");
   div.textContent = str;
   return div.innerHTML;
+}
+
+function getRankShiftBadgeHtml(originalRank, currentRank) {
+  if (originalRank === undefined || originalRank === null) {
+    return "";
+  }
+  const shift = originalRank - currentRank;
+  if (shift > 0) {
+    return `<span class="rank-shift-badge rank-shift-up">▲ +${shift}</span>`;
+  } else if (shift < 0) {
+    return `<span class="rank-shift-badge rank-shift-down">▼ ${shift}</span>`;
+  } else {
+    return `<span class="rank-shift-badge rank-shift-unchanged">• Unchanged</span>`;
+  }
+}
+
+function formatScoreHtml(score, originalScore, retrievalMode, useReranking) {
+  let label = "Score";
+  let formattedScore = score.toFixed(3);
+  
+  if (useReranking) {
+    label = "Rerank";
+    formattedScore = `${(score * 100).toFixed(1)}%`;
+  } else if (retrievalMode === "sparse") {
+    label = "BM25";
+    formattedScore = score.toFixed(2);
+  } else if (retrievalMode === "hybrid") {
+    label = "RRF";
+    formattedScore = score.toFixed(4);
+  } else {
+    label = "Dist";
+    formattedScore = score.toFixed(3);
+  }
+
+  let html = `<span class="score-badge-val">${label}: ${formattedScore}</span>`;
+  
+  if (useReranking && originalScore !== null && originalScore !== undefined) {
+    let origLabel = retrievalMode === "sparse" ? "BM25" : (retrievalMode === "hybrid" ? "RRF" : "Dist");
+    let origFormatted = originalScore.toFixed(3);
+    html += `<span class="score-badge-original" title="Score before reranking"> (was ${origLabel}: ${origFormatted})</span>`;
+  }
+  
+  return html;
 }
 
 document.addEventListener("keydown", (e) => {
@@ -940,6 +1007,7 @@ function setupCanvasListeners(canvas) {
   canvas.addEventListener("mousedown", (e) => {
     const pos = getMousePos(e);
     vectorState.isDragging = true;
+    vectorState.dragStartPos = { x: pos.x, y: pos.y };
     vectorState.dragStart = {
       x: pos.x - vectorState.pan.x,
       y: pos.y - vectorState.pan.y,
@@ -1029,8 +1097,16 @@ function setupCanvasListeners(canvas) {
   );
 
   canvas.addEventListener("click", (e) => {
-    if (vectorState.isDragging) return;
     const pos = getMousePos(e);
+    if (vectorState.dragStartPos) {
+      const dx = pos.x - vectorState.dragStartPos.x;
+      const dy = pos.y - vectorState.dragStartPos.y;
+      const dist = Math.hypot(dx, dy);
+      if (dist > 5) {
+        return; // It was a drag, not a click!
+      }
+    }
+    if (vectorState.isDragging) return;
     const width = canvas.width / window.devicePixelRatio;
     const height = canvas.height / window.devicePixelRatio;
 
@@ -1193,6 +1269,16 @@ async function runQuerySimulator() {
       <div class="skeleton-loader"></div>
     `;
 
+    const useHyde = document.getElementById("query-use-hyde") ? document.getElementById("query-use-hyde").checked : false;
+    const useReranking = document.getElementById("query-use-reranking") ? document.getElementById("query-use-reranking").checked : false;
+    const filterLevel = document.getElementById("query-filter-level") ? document.getElementById("query-filter-level").value : "all";
+    let whereClause = null;
+    if (filterLevel === "parent") {
+      whereClause = { "level": 0 };
+    } else if (filterLevel === "child") {
+      whereClause = { "level": 1 };
+    }
+
     // Make the actual API call to the backend
     const res = await fetch("/api/retrieve", {
       method: "POST", // Needs to be POST to send a JSON body!
@@ -1203,6 +1289,9 @@ async function runQuerySimulator() {
         strategy: state.strategy,
         top_k: 3,
         retrieval_mode: dom.queryRetrievalMode ? dom.queryRetrievalMode.value : "dense",
+        use_hyde: useHyde,
+        use_reranking: useReranking,
+        metadata: whereClause,
       }),
     });
 
@@ -1242,6 +1331,8 @@ async function runQuerySimulator() {
         chunk: chunk,
         dist: result.score,
         text_highlighted: result.text_highlighted,
+        original_rank: result.original_rank,
+        original_score: result.original_score,
       };
     });
 
@@ -1259,19 +1350,42 @@ async function runQuerySimulator() {
     };
 
     // Render results in the drawer
-    dom.queryResultsList.innerHTML = topK
+    let htmlContent = "";
+    if (data.hypothetical_answer) {
+      htmlContent += `
+        <div class="query-result-item" style="border-left-color: var(--superman-blue); background-color: var(--superman-blue-muted); margin-bottom: 12px; border-radius: 6px; padding: 10px;">
+          <div class="query-result-header" style="margin-bottom: 4px;">
+            <span class="rank-badge" style="color: var(--superman-blue); font-weight: bold;">🔮 Generated Hypothetical Answer (HyDE)</span>
+          </div>
+          <div class="query-result-text" style="font-style: italic; color: var(--text-primary); font-size: 0.85rem;">"${escapeHtml(data.hypothetical_answer)}"</div>
+        </div>
+      `;
+    }
+
+    htmlContent += topK
       .map((item, index) => {
+        const retrievalMode = dom.queryRetrievalMode ? dom.queryRetrievalMode.value : "dense";
         return `
         <div class="query-result-item" style="border-left-color: ${index === 0 ? "var(--warning-color)" : "var(--info-color)"}">
           <div class="query-result-header">
-            <span class="rank-badge" style="color: ${index === 0 ? "var(--warning-color)" : "var(--info-color)"}">Rank ${index + 1} (${item.chunk.id})</span>
-            <span class="dist-badge">Dist: ${item.dist.toFixed(3)}</span>
+            <span class="rank-badge" style="color: ${index === 0 ? "var(--warning-color)" : "var(--info-color)"}">
+              Rank ${index + 1}
+              ${getRankShiftBadgeHtml(item.original_rank, index + 1)}
+            </span>
+            <span class="dist-badge">
+              ${formatScoreHtml(item.dist, item.original_score, retrievalMode, useReranking)}
+            </span>
           </div>
           <div class="query-result-text">${item.text_highlighted || escapeHtml(item.chunk.text.substring(0, 100)) + "..."}</div>
+          <div class="query-result-meta">
+            <span>ID: ${item.chunk.id}</span>
+          </div>
         </div>
       `;
       })
       .join("");
+
+    dom.queryResultsList.innerHTML = htmlContent;
 
     // --- TASK 3.4: X-RAY DOCUMENT HIGHLIGHTING ---
     // 1. Activate the search mode on the X-Ray text to dim non-retrieved chunks
@@ -1290,14 +1404,15 @@ async function runQuerySimulator() {
     topK.forEach((item, index) => {
       const rank = index + 1;
       const chunkId = item.chunk.id;
-      const span = dom.xrayText.querySelector(`[data-chunk-id="${chunkId}"]`);
+      const spans = dom.xrayText.querySelectorAll(`[data-all-chunks*="${chunkId}"]`);
 
-      if (span) {
+      spans.forEach((span) => {
         span.classList.add(`retrieved-rank-${rank}`);
-        // If it's the #1 hit, scroll the Document Viewer straight to it!
-        if (rank === 1) {
-          span.scrollIntoView({ behavior: "smooth", block: "center" });
-        }
+      });
+
+      // If it's the #1 hit, scroll the Document Viewer straight to it!
+      if (rank === 1 && spans.length > 0) {
+        spans[0].scrollIntoView({ behavior: "smooth", block: "center" });
       }
     });
     // ----------------------------------------------
@@ -1376,12 +1491,27 @@ if (domArena.btnFight) {
       domReferee.triggerBox.style.display = "block";
     }
 
+    const hydeContainer = document.getElementById("arena-hyde-container");
+    if (hydeContainer) {
+      hydeContainer.style.display = "none";
+    }
+
     domArena.resultsA.innerHTML =
       '<div class="skeleton-loader"></div><div class="skeleton-loader"></div>';
     domArena.resultsB.innerHTML =
       '<div class="skeleton-loader"></div><div class="skeleton-loader"></div>';
 
     try {
+      const useHyde = document.getElementById("arena-use-hyde") ? document.getElementById("arena-use-hyde").checked : false;
+      const useReranking = document.getElementById("arena-use-reranking") ? document.getElementById("arena-use-reranking").checked : false;
+      const filterLevel = document.getElementById("arena-filter-level") ? document.getElementById("arena-filter-level").value : "all";
+      let whereClause = null;
+      if (filterLevel === "parent") {
+        whereClause = { "level": 0 };
+      } else if (filterLevel === "child") {
+        whereClause = { "level": 1 };
+      }
+
       const res = await fetch("/api/compare", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -1393,6 +1523,9 @@ if (domArena.btnFight) {
           model_b: domArena.modelB.value,
           strategy_b: domArena.strategyB.value,
           retrieval_mode: domArena.retrievalMode ? domArena.retrievalMode.value : "dense",
+          use_hyde: useHyde,
+          use_reranking: useReranking,
+          metadata: whereClause,
         }),
       });
 
@@ -1403,16 +1536,35 @@ if (domArena.btnFight) {
 
       const data = await res.json();
 
+      // Render HyDE box if present
+      const hydeText = document.getElementById("arena-hyde-text");
+      if (hydeContainer && hydeText) {
+        if (data.hypothetical_answer) {
+          hydeText.textContent = `"${data.hypothetical_answer}"`;
+          hydeContainer.style.display = "block";
+        } else {
+          hydeContainer.style.display = "none";
+        }
+      }
+
       // Render Column A
       domArena.resultsA.innerHTML = data.results_a
         .map(
           (chunk, i) => `
         <div class="query-result-item" style="border-left-color: var(--warning-color)">
           <div class="query-result-header">
-            <span class="rank-badge" style="color: var(--warning-color)">Rank ${i + 1}</span>
-            <span class="dist-badge">Dist: ${chunk.score.toFixed(3)}</span>
+            <span class="rank-badge" style="color: var(--warning-color)">
+              Rank ${i + 1}
+              ${getRankShiftBadgeHtml(chunk.original_rank, i + 1)}
+            </span>
+            <span class="dist-badge">
+              ${formatScoreHtml(chunk.score, chunk.original_score, domArena.retrievalMode ? domArena.retrievalMode.value : "dense", useReranking)}
+            </span>
           </div>
           <div class="query-result-text">${chunk.text_highlighted || escapeHtml(chunk.text)}</div>
+          <div class="query-result-meta">
+            <span>ID: ${chunk.id}</span>
+          </div>
         </div>
       `,
         )
@@ -1424,10 +1576,18 @@ if (domArena.btnFight) {
           (chunk, i) => `
         <div class="query-result-item" style="border-left-color: var(--info-color)">
           <div class="query-result-header">
-            <span class="rank-badge" style="color: var(--info-color)">Rank ${i + 1}</span>
-            <span class="dist-badge">Dist: ${chunk.score.toFixed(3)}</span>
+            <span class="rank-badge" style="color: var(--info-color)">
+              Rank ${i + 1}
+              ${getRankShiftBadgeHtml(chunk.original_rank, i + 1)}
+            </span>
+            <span class="dist-badge">
+              ${formatScoreHtml(chunk.score, chunk.original_score, domArena.retrievalMode ? domArena.retrievalMode.value : "dense", useReranking)}
+            </span>
           </div>
           <div class="query-result-text">${chunk.text_highlighted || escapeHtml(chunk.text)}</div>
+          <div class="query-result-meta">
+            <span>ID: ${chunk.id}</span>
+          </div>
         </div>
       `,
         )

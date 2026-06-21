@@ -86,6 +86,7 @@ class QueryRequest(BaseModel):
     retrieval_mode: RetrievalMode = RetrievalMode.DENSE
     use_hyde: bool = False
     use_reranking: bool = False
+    metadata: Optional[Dict[str, Any]] = None
 
 
 class RetrievedChunk(BaseModel):
@@ -97,6 +98,8 @@ class RetrievedChunk(BaseModel):
     parent_id: Optional[str] = None
     level: int = 0
     text_highlighted: Optional[str] = None
+    original_score: Optional[float] = None
+    original_rank: Optional[int] = None
 
 
 class QueryResponse(BaseModel):
@@ -117,6 +120,7 @@ class CompareRequest(BaseModel):
     retrieval_mode: RetrievalMode = RetrievalMode.DENSE
     use_hyde: bool = False
     use_reranking: bool = False
+    metadata: Optional[Dict[str, Any]] = None
 
 
 class CompareResponse(BaseModel):

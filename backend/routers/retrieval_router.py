@@ -1,12 +1,11 @@
-from backend.constants import hyde_prompt
-from backend.engines import llm_client
+from backend.engines.re_ranker_engine import RerankerEngine
+from backend.engines.bm25_engine import BM25Engine
 from backend.engines.llm_client import OllamaClient
 from backend.constants import system_instructions
 import asyncio
-from typing import Any, List, Optional
+from typing import Any, Dict, List, Optional
 from fastapi import APIRouter
 import json
-import re
 from backend.engines.embedding import EmbeddingEngine
 from backend.engines.reducer import ReducerEngine
 from backend.models.schemas import (
@@ -20,15 +19,9 @@ from backend.models.schemas import (
     RetrievedChunk,
 )
 from backend.storage.vector_store import VectorStore
-
-from nltk.tokenize import RegexpTokenizer
-from nltk.corpus import stopwords
+from backend.utils import get_hyde_text, get_keywords, get_text_highlights, rrf
 
 router = APIRouter(prefix="/api", tags=["retrieval"])
-
-
-tokenizer = RegexpTokenizer(r"\w+")
-stop_words = set(stopwords.words("english"))
 
 
 @router.post("/retrieve", response_model=QueryResponse)
@@ -40,17 +33,23 @@ async def retrieve(request: QueryRequest):
         else request.search_text
     )
 
-    if request.use_reranking == True:
-        "" ""
+    limit = request.top_k * 4 if request.use_reranking else request.top_k
 
     retrieved_chunks, embeddings = await process_retrieval(
         request.embedding_model,
         search_text,
         request.strategy,
-        request.top_k,
-        request.search_text,
+        limit,
         request.retrieval_mode,
+        request.search_text,
+        request.metadata,
     )
+
+    if request.use_reranking == True:
+        re_ranker = RerankerEngine()
+        retrieved_chunks = re_ranker.rerank(
+            query=request.search_text, chunks=retrieved_chunks, top_k=request.top_k
+        )
 
     query_coords = [0.0, 0.0]
     if ReducerEngine._last_fitted_reducer is not None:
@@ -76,6 +75,7 @@ async def compare(request: CompareRequest):
         if request.use_hyde
         else request.search_text
     )
+    limit = request.top_k * 4 if request.use_reranking else request.top_k
     (
         (retrieved_chunks_a, _),
         (retrieved_chunks_b, _),
@@ -84,17 +84,34 @@ async def compare(request: CompareRequest):
             request.model_a,
             retrieval_text,
             request.strategy_a,
-            request.top_k,
+            limit,
+            request.retrieval_mode,
             request.search_text,
+            request.metadata,
         ),
         process_retrieval(
             request.model_b,
             retrieval_text,
             request.strategy_b,
-            request.top_k,
+            limit,
+            request.retrieval_mode,
             request.search_text,
+            request.metadata,
         ),
     )
+
+    if request.use_reranking == True:
+        re_ranker = RerankerEngine()
+        retrieved_chunks_a = re_ranker.rerank(
+            query=request.search_text,
+            chunks=retrieved_chunks_a,
+            top_k=request.top_k,
+        )
+        retrieved_chunks_b = re_ranker.rerank(
+            query=request.search_text,
+            chunks=retrieved_chunks_b,
+            top_k=request.top_k,
+        )
 
     response_kwargs = {
         "search_text": request.search_text,
@@ -130,25 +147,87 @@ async def process_retrieval(
     top_k,
     retrieval_mode,
     original_query: Optional[str] = None,
+    metadata: Optional[Dict[str, Any]] = None,
 ):
     vector_store = VectorStore()
     embedding_engine = EmbeddingEngine(model.value)
     embeddings = await embedding_engine.generate_embeddings([search_text])
     collection_name = f"{model.value}_{strategy.value}".replace(":", "-")
-    retrieval_response: Any
+    result: Any = None
     if retrieval_mode == RetrievalMode.DENSE:
-        """"""
+        result: Any = await vector_store.retrieve(
+            collection_name=collection_name,
+            embeddings=embeddings,
+            n_results=top_k,
+            where=metadata,
+        )
     elif retrieval_mode == RetrievalMode.SPARSE:
-        """"""
+        all_data = await vector_store.get_all_documents(collection_name=collection_name)
+        docs = all_data.get("documents") or []
+        doc_ids = all_data.get("ids") or []
+        meta_datas: List[Any] = all_data.get("metadatas", []) or []
+
+        if not docs:
+            result = {
+                "ids": [[]],
+                "documents": [[]],
+                "distances": [[]],
+                "metadatas": [[]],
+            }
+        else:
+            bm25 = BM25Engine(documents=docs, doc_ids=doc_ids, metadatas=meta_datas)
+            sparse_results = bm25.search(query=search_text, top_k=top_k, where=metadata)
+            result = {
+                "ids": [[res["id"] for res in sparse_results]],
+                "documents": [[res["text"] for res in sparse_results]],
+                "distances": [[res["score"] for res in sparse_results]],
+                "metadatas": [[res["metadata"] for res in sparse_results]],
+            }
     elif retrieval_mode == RetrievalMode.HYBRID:
-        """"""
+        dense_res = await vector_store.retrieve(
+            collection_name=collection_name,
+            embeddings=embeddings,
+            n_results=top_k * 2,
+            where=metadata,
+        )
+        dense_ids = (
+            dense_res.get("ids", [[]])[0] if dense_res and "ids" in dense_res else []
+        )
+        all_data = await vector_store.get_all_documents(collection_name)
+        docs = all_data.get("documents", []) or []
+        ids = all_data.get("ids", []) or []
+        metadatas: List[Any] = all_data.get("metadatas", []) or []
 
-    result: Any = await vector_store.retrieve(
-        collection_name=collection_name,
-        embeddings=embeddings,
-        n_results=top_k,
-    )
+        if not docs:
+            result = {
+                "ids": [[]],
+                "documents": [[]],
+                "distances": [[]],
+                "metadatas": [[]],
+            }
+        else:
+            bm25 = BM25Engine(documents=docs, doc_ids=ids, metadatas=metadatas)
+            sparse_results = bm25.search(search_text, top_k=top_k * 2, where=metadata)
+            sparse_ids = [res["id"] for res in sparse_results]
 
+            # 2. Build a lookup map of the document contents
+            doc_lookup = {
+                ids[i]: {"text": docs[i], "metadata": metadatas[i]}
+                for i in range(len(ids))
+            }
+
+            # 3. Fuse rankings
+            fused_ranks = rrf(dense_ids, sparse_ids, k=60)[:top_k]
+
+            # 4. Standardize output
+            result = {
+                "ids": [[item[0] for item in fused_ranks]],
+                "documents": [[doc_lookup[item[0]]["text"] for item in fused_ranks]],
+                "distances": [[item[1] for item in fused_ranks]],  # RRF score
+                "metadatas": [
+                    [doc_lookup[item[0]]["metadata"] for item in fused_ranks]
+                ],
+            }
     retrieved_chunks = []
 
     highlight_text = original_query if original_query is not None else search_text
@@ -177,41 +256,3 @@ async def process_retrieval(
             )
 
     return retrieved_chunks, embeddings
-
-
-def get_text_highlights(original_text, search_text):
-    query_keywords = get_keywords(search_text)
-    if not query_keywords:
-        return original_text
-
-    query_keywords.sort(key=len, reverse=True)
-
-    safe_keywords = [f"{re.escape(w)}(?:'s)?" for w in query_keywords]
-
-    pattern_string = r"\b(" + "|".join(safe_keywords) + r")\b"
-    pattern = re.compile(pattern_string, re.IGNORECASE)
-
-    return pattern.sub(r"<mark>\1</mark>", original_text)
-
-
-def get_keywords(text: str):
-    token = tokenizer.tokenize(text.lower())
-    return [word for word in token if word not in stop_words]
-
-
-async def get_hyde_text(search_text):
-    llm_client = OllamaClient()
-    hyde_prompt.format(search_text=search_text)
-    return await llm_client.generate(hyde_prompt, response_format=None)
-
-
-def rrf(dense_ranks: List[str], sparse_ranks: List[str], k: int = 60) -> List[tuple]:
-    rrf_scores = {}
-
-    for rank, doc_id in enumerate(dense_ranks):
-        rrf_scores[doc_id] = rrf_scores.get(doc_id, 0.0) + 1.0 / (k + rank + 1)
-
-    for rank, doc_id in enumerate(sparse_ranks):
-        rrf_scores[doc_id] = rrf_scores.get(doc_id, 0.0) + 1.0 / (k + rank + 1)
-
-    return sorted(rrf_scores.items(), key=lambda x: x[1], reverse=True)

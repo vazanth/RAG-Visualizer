@@ -25,11 +25,12 @@ class VectorStore:
             metadatas=metadatas,
         )
 
-    async def retrieve(self, collection_name, embeddings, n_results=3):
+    async def retrieve(self, collection_name, embeddings, where, n_results=3):
         collection = self.get_collection(collection_name)
 
         return await asyncio.to_thread(
             collection.query,
+            where=where,
             query_embeddings=embeddings,
             n_results=n_results,
         )
