@@ -21,6 +21,7 @@ RUN mkdir -p /app/nltk_data && \
 RUN python -c "from huggingface_hub import snapshot_download; \
     snapshot_download(repo_id='nomic-ai/nomic-embed-text-v1.5'); \
     snapshot_download(repo_id='C10X/Qwen3-Embedding-TurboX.v2'); \
+    snapshot_download(repo_id='BAAI/bge-small-en-v1.5'); \
     snapshot_download(repo_id='Qwen/Qwen2.5-0.5B-Instruct')"
 
 
