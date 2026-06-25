@@ -16,7 +16,7 @@ class Strategy(str, Enum):
 
 class EmbeddingModel(str, Enum):
     NOMIC_EMBED_TEXT = "nomic-embed-text"
-    EMBEDDING_GEMMA = "EmbeddingGemma"
+    BGE_SMALL_EN = "bge-small-en"
     QWEN_EMBEDDING = "qwen3-embedding:0.6b"
 
 
