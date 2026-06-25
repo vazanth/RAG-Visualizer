@@ -20,16 +20,16 @@ RUN pip install --no-cache-dir .
 RUN mkdir -p /app/nltk_data && \
     python -c "import nltk; nltk.download('punkt', download_dir='/app/nltk_data'); nltk.download('punkt_tab', download_dir='/app/nltk_data'); nltk.download('stopwords', download_dir='/app/nltk_data')"
 
-# Pre-download HF embedding models at build time
-RUN python -c "from sentence_transformers import SentenceTransformer; \
-    SentenceTransformer('nomic-ai/nomic-embed-text-v1.5', trust_remote_code=True); \
-    SentenceTransformer('google/gemma-3n-embedding-exp', trust_remote_code=True); \
-    SentenceTransformer('Qwen/Qwen3-Embedding-0.6B', trust_remote_code=True)"
+# Pre-download HF embedding models at build time (download files only, no RAM loading)
+RUN python -c "from huggingface_hub import snapshot_download; \
+    snapshot_download(repo_id='nomic-ai/nomic-embed-text-v1.5'); \
+    snapshot_download(repo_id='google/gemma-3n-embedding-exp'); \
+    snapshot_download(repo_id='Qwen/Qwen3-Embedding-0.6B')"
 
-# Pre-download HF Qwen LLM model at build time
-RUN python -c "from transformers import AutoTokenizer, AutoModelForCausalLM; \
-    AutoTokenizer.from_pretrained('Qwen/Qwen2.5-1.5B-Instruct'); \
-    AutoModelForCausalLM.from_pretrained('Qwen/Qwen2.5-1.5B-Instruct')"
+# Pre-download HF Qwen LLM model at build time (download files only, no RAM loading)
+RUN python -c "from huggingface_hub import snapshot_download; \
+    snapshot_download(repo_id='Qwen/Qwen2.5-1.5B-Instruct')"
+
 
 # Copy app code
 COPY . .
