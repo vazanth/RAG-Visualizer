@@ -1,6 +1,10 @@
 from typing import Optional
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
+import asyncio
+
+# Prevent PyTorch from overloading multi-core virtual CPUs which causes thrashing and extreme slowness
+torch.set_num_threads(1)
 
 _llm_pipeline = None
 
@@ -34,12 +38,13 @@ class OllamaClient:
         ]
         
         generation_kwargs = {
-            "max_new_tokens": 512,
+            "max_new_tokens": 384,  # Reduced from 512 to significantly speed up inference
             "temperature": 0.1,
             "do_sample": False
         }
         
-        outputs = pipe(messages, **generation_kwargs)
+        # Run CPU-bound text generation in a separate thread so it doesn't block the FastAPI event loop
+        outputs = await asyncio.to_thread(pipe, messages, **generation_kwargs)
         result_text = outputs[0]["generated_text"][-1]["content"]
         
         cleaned_text = result_text.strip()
@@ -52,5 +57,3 @@ class OllamaClient:
             cleaned_text = "\n".join(lines).strip()
             
         return cleaned_text
-
-

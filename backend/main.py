@@ -59,3 +59,14 @@ app.mount("/static", StaticFiles(directory=str(FRONTEND_DIR)), name="static")
 @app.get("/")
 def serve_frontend():
     return FileResponse(str(FRONTEND_DIR / "index.html"))
+
+
+# Pre-warm the LLM referee model at startup so the first request doesn't experience model loading lag
+try:
+    print("Pre-warming the LLM referee model...")
+    from backend.engines.llm_client import OllamaClient
+    OllamaClient()._get_pipeline()
+    print("LLM referee model warmed up successfully.")
+except Exception as e:
+    print(f"Failed to pre-warm LLM model: {e}")
+
