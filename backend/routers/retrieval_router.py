@@ -34,12 +34,11 @@ async def retrieve(request: QueryRequest, http_request: Request):
         if not limiter.allow(client_ip):
             raise HTTPException(
                 status_code=429,
-                detail="Rate limit exceeded. You can only make 2 LLM requests per minute."
+                detail="Rate limit exceeded. You can only make 2 LLM requests per minute.",
             )
         search_text = await get_hyde_text(request.search_text)
     else:
         search_text = request.search_text
-
 
     limit = request.top_k * 4 if request.use_reranking else request.top_k
 
@@ -83,7 +82,7 @@ async def compare(request: CompareRequest, http_request: Request):
         if not limiter.allow(client_ip):
             raise HTTPException(
                 status_code=429,
-                detail="Rate limit exceeded. You can only make 2 LLM requests per minute."
+                detail="Rate limit exceeded. You can only make 2 LLM requests per minute.",
             )
         retrieval_text = await get_hyde_text(request.search_text)
     else:
@@ -144,10 +143,9 @@ async def judge(request: JudgeRequest, http_request: Request):
     if not limiter.allow(client_ip):
         raise HTTPException(
             status_code=429,
-            detail="Rate limit exceeded. You can only make 2 LLM requests per minute."
+            detail="Rate limit exceeded. You can only make 2 LLM requests per minute.",
         )
     prompt = system_instructions.format(
-
         search_query=request.search_query,
         chunk_a=request.chunk_a,
         chunk_b=request.chunk_b,

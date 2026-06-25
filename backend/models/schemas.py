@@ -167,12 +167,12 @@ class JudgeResponse(BaseModel):
     chunk_a_score: ChunkScore
     chunk_b_score: ChunkScore
 
-    winner_reason: str
-    chunk_a_strengths: List[str]
-    chunk_b_strengths: List[str]
-    chunk_a_weaknesses: List[str]
-    chunk_b_weaknesses: List[str]
-    deciding_dimension: str
+    winner_reason: str = "No reason provided."
+    chunk_a_strengths: List[str] = []
+    chunk_b_strengths: List[str] = []
+    chunk_a_weaknesses: List[str] = []
+    chunk_b_weaknesses: List[str] = []
+    deciding_dimension: str = "query_relevance"
 
     @model_validator(mode="after")
     def check_winner_consistency(self) -> "JudgeResponse":
