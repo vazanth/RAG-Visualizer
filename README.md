@@ -6,10 +6,10 @@ colorTo: red
 sdk: docker
 app_port: 7860
 pinned: false
+startup_duration_timeout: 1h
 ---
 
 # 🔬 RAG Visualizer
-
 
 **An X-Ray machine for Retrieval-Augmented Generation pipelines.**
 
@@ -51,7 +51,7 @@ Visualize and compare **5 chunking strategies** side-by-side:
 - **Sonar Query Simulator** — Type a natural language query and watch the sonar ping animate across the canvas in real time.
 - **Sonar Probe** — Click anywhere on the 2D canvas to retrieve the nearest chunks in that region.
 - **Document X-Ray Highlighting** — Retrieved chunks glow dynamically in the document viewer with rank-based styling (gold for Rank 1, dashed for Rank 2, dotted for Rank 3).
-- **Metadata Level Filtering** — Filter your context pool on the fly (retrieve *Only Parents*, *Only Children*, or *All Levels*).
+- **Metadata Level Filtering** — Filter your context pool on the fly (retrieve _Only Parents_, _Only Children_, or _All Levels_).
 - **Cross-Encoder Reranking** — Run a local FlashRank (`ms-marco-MiniLM-L-12-v2`) engine to rerank search results.
 - **Rank Shift Badges** — Visual indicators showing exactly how much chunks moved after reranking (`▲ +3`, `▼ -1`, or `• Unchanged`).
 - **Normalized Match Strength** — Converts raw vector distances into intuitive similarity percentages (e.g. `Match: 87.7%`).
