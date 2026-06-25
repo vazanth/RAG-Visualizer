@@ -1,3 +1,5 @@
 .venv
 store/
 __pycache__
+assets/
+.env
