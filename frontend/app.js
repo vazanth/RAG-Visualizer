@@ -1585,50 +1585,64 @@ if (domArena.btnFight) {
       }
 
       // Render Column A
-      domArena.resultsA.innerHTML = data.results_a
-        .map(
-          (chunk, i) => `
-        <div class="query-result-item" style="border-left-color: var(--warning-color)">
-          <div class="query-result-header">
-            <span class="rank-badge" style="color: var(--warning-color)">
-              Rank ${i + 1}
-              ${getRankShiftBadgeHtml(chunk.original_rank, i + 1)}
-            </span>
-            <span class="dist-badge">
-              ${formatScoreHtml(chunk.score, chunk.original_score, domArena.retrievalModeA ? domArena.retrievalModeA.value : "dense", useReranking)}
-            </span>
+      if (data.results_a.length === 0) {
+        domArena.resultsA.innerHTML = `
+          <div style="text-align: center; color: var(--text-tertiary); padding: var(--space-xl); font-size: 0.9rem;">
+            ⚠️ No matching chunks found. Make sure this model/strategy combination has been chunked first!
+          </div>`;
+      } else {
+        domArena.resultsA.innerHTML = data.results_a
+          .map(
+            (chunk, i) => `
+          <div class="query-result-item" style="border-left-color: var(--warning-color)">
+            <div class="query-result-header">
+              <span class="rank-badge" style="color: var(--warning-color)">
+                Rank ${i + 1}
+                ${getRankShiftBadgeHtml(chunk.original_rank, i + 1)}
+              </span>
+              <span class="dist-badge">
+                ${formatScoreHtml(chunk.score, chunk.original_score, domArena.retrievalModeA ? domArena.retrievalModeA.value : "dense", useReranking)}
+              </span>
+            </div>
+            <div class="query-result-text">${chunk.text_highlighted || escapeHtml(chunk.text)}</div>
+            <div class="query-result-meta">
+              <span>ID: ${chunk.id}</span>
+            </div>
           </div>
-          <div class="query-result-text">${chunk.text_highlighted || escapeHtml(chunk.text)}</div>
-          <div class="query-result-meta">
-            <span>ID: ${chunk.id}</span>
-          </div>
-        </div>
-      `,
-        )
-        .join("");
+        `,
+          )
+          .join("");
+      }
 
       // Render Column B
-      domArena.resultsB.innerHTML = data.results_b
-        .map(
-          (chunk, i) => `
-        <div class="query-result-item" style="border-left-color: var(--info-color)">
-          <div class="query-result-header">
-            <span class="rank-badge" style="color: var(--info-color)">
-              Rank ${i + 1}
-              ${getRankShiftBadgeHtml(chunk.original_rank, i + 1)}
-            </span>
-            <span class="dist-badge">
-              ${formatScoreHtml(chunk.score, chunk.original_score, domArena.retrievalModeB ? domArena.retrievalModeB.value : "dense", useReranking)}
-            </span>
+      if (data.results_b.length === 0) {
+        domArena.resultsB.innerHTML = `
+          <div style="text-align: center; color: var(--text-tertiary); padding: var(--space-xl); font-size: 0.9rem;">
+            ⚠️ No matching chunks found. Make sure this model/strategy combination has been chunked first!
+          </div>`;
+      } else {
+        domArena.resultsB.innerHTML = data.results_b
+          .map(
+            (chunk, i) => `
+          <div class="query-result-item" style="border-left-color: var(--info-color)">
+            <div class="query-result-header">
+              <span class="rank-badge" style="color: var(--info-color)">
+                Rank ${i + 1}
+                ${getRankShiftBadgeHtml(chunk.original_rank, i + 1)}
+              </span>
+              <span class="dist-badge">
+                ${formatScoreHtml(chunk.score, chunk.original_score, domArena.retrievalModeB ? domArena.retrievalModeB.value : "dense", useReranking)}
+              </span>
+            </div>
+            <div class="query-result-text">${chunk.text_highlighted || escapeHtml(chunk.text)}</div>
+            <div class="query-result-meta">
+              <span>ID: ${chunk.id}</span>
+            </div>
           </div>
-          <div class="query-result-text">${chunk.text_highlighted || escapeHtml(chunk.text)}</div>
-          <div class="query-result-meta">
-            <span>ID: ${chunk.id}</span>
-          </div>
-        </div>
-      `,
-        )
-        .join("");
+        `,
+          )
+          .join("");
+      }
 
       // Activate AI Referee if both sides retrieved chunks
       if (
