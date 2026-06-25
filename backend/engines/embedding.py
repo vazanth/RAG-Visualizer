@@ -17,7 +17,12 @@ class EmbeddingEngine:
         hf_name = MODEL_MAP.get(embedding_model, embedding_model)
 
         if hf_name not in _model_cache:
-            _model_cache[hf_name] = SentenceTransformer(hf_name, trust_remote_code=True)
+            token = os.environ.get("HF_TOKEN")
+            _model_cache[hf_name] = SentenceTransformer(
+                hf_name,
+                trust_remote_code=True,
+                token=token
+            )
         self.model = _model_cache[hf_name]
 
     async def generate_embeddings(self, chunks: Sequence[ChunkNode | str]):
