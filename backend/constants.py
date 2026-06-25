@@ -95,6 +95,6 @@ Passage:"""
 
 MODEL_MAP = {
     "nomic-embed-text": "nomic-ai/nomic-embed-text-v1.5",
-    "EmbeddingGemma": "google/gemma-3n-embedding-exp",
+    "EmbeddingGemma": "google/embeddinggemma-300m",
     "qwen3-embedding:0.6b": "C10X/Qwen3-Embedding-TurboX.v2",
 }
