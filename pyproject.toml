@@ -18,6 +18,6 @@ dependencies = [
     "flashrank>=0.2.10",
     "sentence-transformers>=3.0.0",
     "einops",
+    "gguf",
+    "accelerate",
 ]
-
-
