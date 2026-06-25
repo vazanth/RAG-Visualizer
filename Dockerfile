@@ -20,6 +20,16 @@ RUN pip install --no-cache-dir .
 RUN mkdir -p /app/nltk_data && \
     python -c "import nltk; nltk.download('punkt', download_dir='/app/nltk_data'); nltk.download('punkt_tab', download_dir='/app/nltk_data'); nltk.download('stopwords', download_dir='/app/nltk_data')"
 
+# Pre-download public HF embedding models at build time (Nomic and Qwen)
+# Note: we exclude the gated google/gemma-3n-embedding-exp to prevent build failures.
+RUN python -c "from huggingface_hub import snapshot_download; \
+    snapshot_download(repo_id='nomic-ai/nomic-embed-text-v1.5'); \
+    snapshot_download(repo_id='Qwen/Qwen3-Embedding-0.6B')"
+
+# Pre-download public HF Qwen LLM model at build time
+RUN python -c "from huggingface_hub import snapshot_download; \
+    snapshot_download(repo_id='Qwen/Qwen2.5-1.5B-Instruct')"
+
 # Copy app code
 COPY . .
 
