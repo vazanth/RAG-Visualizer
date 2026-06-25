@@ -17,16 +17,12 @@ RUN pip install --no-cache-dir .
 RUN mkdir -p /app/nltk_data && \
     python -c "import nltk; nltk.download('punkt', download_dir='/app/nltk_data'); nltk.download('punkt_tab', download_dir='/app/nltk_data'); nltk.download('stopwords', download_dir='/app/nltk_data')"
 
-# Pre-download public HF embedding models
+# Pre-download public HF embedding and LLM models
 RUN python -c "from huggingface_hub import snapshot_download; \
     snapshot_download(repo_id='nomic-ai/nomic-embed-text-v1.5'); \
-    snapshot_download(repo_id='C10X/Qwen3-Embedding-TurboX.v2')"
+    snapshot_download(repo_id='C10X/Qwen3-Embedding-TurboX.v2'); \
+    snapshot_download(repo_id='Qwen/Qwen2.5-0.5B-Instruct')"
 
-
-# Download lightweight GGUF model instead of raw safetensors
-RUN mkdir -p /app/models && \
-    python -c "from huggingface_hub import hf_hub_download; \
-    hf_hub_download(repo_id='Qwen/Qwen2.5-1.5B-Instruct-GGUF', filename='qwen2.5-1.5b-instruct-q4_k_m.gguf', local_dir='/app/models')"
 
 COPY . .
 

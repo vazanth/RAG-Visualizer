@@ -7,7 +7,7 @@ _llm_pipeline = None
 
 class OllamaClient:
     def __init__(self):
-        self.model_name = "Qwen/Qwen2.5-1.5B-Instruct"
+        self.model_name = "Qwen/Qwen2.5-0.5B-Instruct"
 
     def _get_pipeline(self):
         global _llm_pipeline

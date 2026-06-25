@@ -1676,6 +1676,8 @@ if (domReferee.btnCall) {
     const labelA = domArena.modelA.options[domArena.modelA.selectedIndex].text;
     const labelB = domArena.modelB.options[domArena.modelB.selectedIndex].text;
 
+    showToast("Summoning AI referee. Running Qwen2.5-0.5B-Instruct on CPU container — evaluation will take ~15-20 seconds.", "info");
+
     domReferee.triggerBox.style.display = "none";
     domReferee.loadingBox.style.display = "block";
     domReferee.verdictBox.style.display = "none";
