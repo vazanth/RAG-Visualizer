@@ -20,7 +20,8 @@ RUN mkdir -p /app/nltk_data && \
 # Pre-download public HF embedding models
 RUN python -c "from huggingface_hub import snapshot_download; \
     snapshot_download(repo_id='nomic-ai/nomic-embed-text-v1.5'); \
-    snapshot_download(repo_id='Qwen/Qwen3-Embedding-0.6B')"
+    snapshot_download(repo_id='C10X/Qwen3-Embedding-TurboX.v2')"
+
 
 # Download lightweight GGUF model instead of raw safetensors
 RUN mkdir -p /app/models && \
