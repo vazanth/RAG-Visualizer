@@ -4,10 +4,12 @@ from backend.engines.llm_client import OllamaClient
 from backend.constants import system_instructions
 import asyncio
 from typing import Any, Dict, List, Optional
-from fastapi import APIRouter
+from fastapi import APIRouter, Request, HTTPException
 import json
 from backend.engines.embedding import EmbeddingEngine
 from backend.engines.reducer import ReducerEngine
+from backend.rate_limiter import limiter
+
 from backend.models.schemas import (
     CompareRequest,
     CompareResponse,
@@ -25,13 +27,19 @@ router = APIRouter(prefix="/api", tags=["retrieval"])
 
 
 @router.post("/retrieve", response_model=QueryResponse)
-async def retrieve(request: QueryRequest):
+async def retrieve(request: QueryRequest, http_request: Request):
 
-    search_text = (
-        await get_hyde_text(request.search_text)
-        if request.use_hyde
-        else request.search_text
-    )
+    if request.use_hyde:
+        client_ip = http_request.client.host if http_request.client else "127.0.0.1"
+        if not limiter.allow(client_ip):
+            raise HTTPException(
+                status_code=429,
+                detail="Rate limit exceeded. You can only make 2 LLM requests per minute."
+            )
+        search_text = await get_hyde_text(request.search_text)
+    else:
+        search_text = request.search_text
+
 
     limit = request.top_k * 4 if request.use_reranking else request.top_k
 
@@ -69,12 +77,18 @@ async def retrieve(request: QueryRequest):
 
 
 @router.post("/compare", response_model=CompareResponse)
-async def compare(request: CompareRequest):
-    retrieval_text = (
-        await get_hyde_text(request.search_text)
-        if request.use_hyde
-        else request.search_text
-    )
+async def compare(request: CompareRequest, http_request: Request):
+    if request.use_hyde:
+        client_ip = http_request.client.host if http_request.client else "127.0.0.1"
+        if not limiter.allow(client_ip):
+            raise HTTPException(
+                status_code=429,
+                detail="Rate limit exceeded. You can only make 2 LLM requests per minute."
+            )
+        retrieval_text = await get_hyde_text(request.search_text)
+    else:
+        retrieval_text = request.search_text
+
     limit = request.top_k * 4 if request.use_reranking else request.top_k
     (
         (retrieved_chunks_a, _),
@@ -125,8 +139,15 @@ async def compare(request: CompareRequest):
 
 
 @router.post("/judge", response_model=JudgeResponse)
-async def judge(request: JudgeRequest):
+async def judge(request: JudgeRequest, http_request: Request):
+    client_ip = http_request.client.host if http_request.client else "127.0.0.1"
+    if not limiter.allow(client_ip):
+        raise HTTPException(
+            status_code=429,
+            detail="Rate limit exceeded. You can only make 2 LLM requests per minute."
+        )
     prompt = system_instructions.format(
+
         search_query=request.search_query,
         chunk_a=request.chunk_a,
         chunk_b=request.chunk_b,

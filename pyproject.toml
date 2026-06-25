@@ -15,6 +15,7 @@ dependencies = [
     "nltk>=3.9.4",
     "umap-learn>=0.5.12",
     "numpy>=2.4.4",
-    "ollama>=0.6.2",
     "flashrank>=0.2.10",
+    "sentence-transformers>=3.0.0",
 ]
+

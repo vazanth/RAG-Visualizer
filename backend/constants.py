@@ -9,24 +9,24 @@ The chunks are labelled "Chunk A" and "Chunk B". You must ignore any model names
 Score each dimension independently. Do not let one dimension influence another.
 
 1. Query Relevance  
-   Does the chunk directly address the specific question asked?  
-   10 = precisely on-topic, 1 = entirely off-topic.  
-   Penalise chunks that are topically adjacent but don't answer the actual query.
+    Does the chunk directly address the specific question asked?  
+    10 = precisely on-topic, 1 = entirely off-topic.  
+    Penalise chunks that are topically adjacent but don't answer the actual query.
 
 2. Answer Completeness  
-   Is the answer self-contained within the chunk, or does it trail off / require external context?  
-   10 = standalone complete answer, 1 = fragment with no usable answer.  
-   Do NOT reward length. A concise, complete answer scores higher than a verbose partial one.
+    Is the answer self-contained within the chunk, or does it trail off / require external context?  
+    10 = standalone complete answer, 1 = fragment with no usable answer.  
+    Do NOT reward length. A concise, complete answer scores higher than a verbose partial one.
 
 3. Factual Plausibility  
-   Based on your knowledge, does the chunk contain accurate, internally consistent information?  
-   10 = no detectable errors, 1 = clearly wrong or contradictory.  
-   If you cannot verify a claim, score conservatively (5–6) rather than assuming correctness.  
-   Do not penalise a chunk for information you simply don't recognise.
+    Based on your knowledge, does the chunk contain accurate, internally consistent information?  
+    10 = no detectable errors, 1 = clearly wrong or contradictory.  
+    If you cannot verify a claim, score conservatively (5–6) rather than assuming correctness.  
+    Do not penalise a chunk for information you simply don't recognise.
 
 4. Clarity & Parsability  
-   Is the chunk clean, readable, and free from noise (broken formatting, encoding artefacts, truncation mid-sentence)?  
-   10 = polished and easy to parse, 1 = heavily noisy or unreadable.
+    Is the chunk clean, readable, and free from noise (broken formatting, encoding artefacts, truncation mid-sentence)?  
+    10 = polished and easy to parse, 1 = heavily noisy or unreadable.
 
 # OVERALL SCORE
 overall = (relevance + completeness + plausibility + clarity) / 4
@@ -58,28 +58,28 @@ Search Query: {search_query}
 # OUTPUT RULE
 OUTPUT: respond with this exact JSON structure and nothing else:
 {{
-  "winner": "chunk_a" | "chunk_b" | "tie",
-  "confidence": float,
-  "chunk_a_score": {{
+    "winner": "chunk_a" | "chunk_b" | "tie",
+    "confidence": float,
+    "chunk_a_score": {{
     "query_relevance": int,
     "answer_completeness": int,
     "factual_plausibility": int,
     "clarity": int,
     "overall": float
-  }},
-  "chunk_b_score": {{
+    }},
+    "chunk_b_score": {{
     "query_relevance": int,
     "answer_completeness": int,
     "factual_plausibility": int,
     "clarity": int,
     "overall": float
-  }},
-  "winner_reason": "2-3 sentences",
-  "deciding_dimension": "e.g. query_relevance",
-  "chunk_a_strengths": ["..."],
-  "chunk_a_weaknesses": ["..."],
-  "chunk_b_strengths": ["..."],
-  "chunk_b_weaknesses": ["..."]
+    }},
+    "winner_reason": "2-3 sentences",
+    "deciding_dimension": "e.g. query_relevance",
+    "chunk_a_strengths": ["..."],
+    "chunk_a_weaknesses": ["..."],
+    "chunk_b_strengths": ["..."],
+    "chunk_b_weaknesses": ["..."]
 }}
 """
 
@@ -91,3 +91,10 @@ Match the tone and vocabulary a subject-matter expert would use when writing abo
 Query: {search_text}
 
 Passage:"""
+
+
+MODEL_MAP = {
+    "nomic-embed-text": "nomic-ai/nomic-embed-text-v1.5",
+    "EmbeddingGemma": "google/gemma-3n-embedding-exp",
+    "qwen3-embedding:0.6b": "Qwen/Qwen3-Embedding-0.6B",
+}

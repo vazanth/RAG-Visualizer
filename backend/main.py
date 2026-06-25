@@ -8,11 +8,12 @@ from fastapi.responses import FileResponse
 
 
 def initialize_nltk():
-    nltk_data_dir = os.path.expanduser("~/nltk_data")
+    nltk_data_dir = os.environ.get("NLTK_DATA", os.path.expanduser("~/nltk_data"))
     os.makedirs(nltk_data_dir, exist_ok=True)
 
     if nltk_data_dir not in nltk.data.path:
         nltk.data.path.append(nltk_data_dir)
+
 
     resources = {
         "tokenizers/punkt": "punkt",

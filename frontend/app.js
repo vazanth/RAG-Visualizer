@@ -1296,10 +1296,18 @@ async function runQuerySimulator() {
     });
 
     if (!res.ok) {
-      throw new Error(`HTTP error! status: ${res.status}`);
+      let errMsg = `HTTP error! status: ${res.status}`;
+      try {
+        const errData = await res.json();
+        if (errData && errData.detail) {
+          errMsg = errData.detail;
+        }
+      } catch (_) {}
+      throw new Error(errMsg);
     }
 
     const data = await res.json();
+
 
     // Parse the query coordinates returned by UMAP
     const targetX = data.query_coords[0];
@@ -1418,7 +1426,7 @@ async function runQuerySimulator() {
     // ----------------------------------------------
   } catch (err) {
     console.error("Query failed:", err);
-    dom.queryResultsList.innerHTML = `<div style="color: #ef4444; padding: 1rem;">Failed to fetch results. Check console.</div>`;
+    dom.queryResultsList.innerHTML = `<div style="color: #ef4444; padding: 1rem;">${escapeHtml(err.message)}</div>`;
   } finally {
     dom.btnQuery.disabled = false;
     dom.btnQuery.innerHTML = "🔍 Query";
@@ -1441,6 +1449,26 @@ if (dom.closeDrawer) {
     dom.queryResultsDrawer.style.display = "none";
   });
 }
+
+// Bind HyDE change warning toasts
+const queryUseHyde = document.getElementById("query-use-hyde");
+if (queryUseHyde) {
+  queryUseHyde.addEventListener("change", (e) => {
+    if (e.target.checked) {
+      showToast("HyDE enabled! Query generation via LLM will take a bit longer (around 2-3 seconds).", "info");
+    }
+  });
+}
+
+const arenaUseHyde = document.getElementById("arena-use-hyde");
+if (arenaUseHyde) {
+  arenaUseHyde.addEventListener("change", (e) => {
+    if (e.target.checked) {
+      showToast("HyDE enabled! Comparison query generation via LLM will take a bit longer (around 2-3 seconds).", "info");
+    }
+  });
+}
+
 
 // ============================================================
 // TASK 3.5: ARENA COMPARISON LOGIC
@@ -1531,12 +1559,19 @@ if (domArena.btnFight) {
         }),
       });
 
-      if (!res.ok)
-        throw new Error(
-          "Comparison failed. Check if server is running and /api/compare exists.",
-        );
+      if (!res.ok) {
+        let errMsg = "Comparison failed. Check if server is running.";
+        try {
+          const errData = await res.json();
+          if (errData && errData.detail) {
+            errMsg = errData.detail;
+          }
+        } catch (_) {}
+        throw new Error(errMsg);
+      }
 
       const data = await res.json();
+
 
       // Render HyDE box if present
       const hydeText = document.getElementById("arena-hyde-text");
@@ -1646,7 +1681,7 @@ if (domReferee.btnCall) {
     domReferee.verdictBox.style.display = "none";
 
     const statuses = [
-      "⚖️ Summoning Gemma evaluation referee...",
+      "⚖️ Summoning AI evaluation referee...",
       "🔍 Blinding model names and metadata...",
       "🧠 Auditing Corner A relevance and clarity...",
       "🧠 Auditing Corner B completeness and truthfulness...",
@@ -1671,12 +1706,19 @@ if (domReferee.btnCall) {
         }),
       });
 
-      if (!res.ok)
-        throw new Error(
-          "Gemma evaluation failed. Check if local Ollama server is running.",
-        );
+      if (!res.ok) {
+        let errMsg = "Evaluation referee failed to respond.";
+        try {
+          const errData = await res.json();
+          if (errData && errData.detail) {
+            errMsg = errData.detail;
+          }
+        } catch (_) {}
+        throw new Error(errMsg);
+      }
 
       const data = await res.json();
+
       clearInterval(statusInterval);
 
       renderRefereeScorecard(data, labelA, labelB);
@@ -1816,3 +1858,41 @@ function renderScoreRow(label, valA, valB) {
     </div>
   `;
 }
+
+// --- TOAST NOTIFICATIONS SYSTEM ---
+function showToast(message, type = "info") {
+  let container = document.querySelector(".toast-container");
+  if (!container) {
+    container = document.createElement("div");
+    container.className = "toast-container";
+    document.body.appendChild(container);
+  }
+
+  const toast = document.createElement("div");
+  toast.className = `toast toast-${type}`;
+  
+  let icon = "ℹ️";
+  if (type === "warning") icon = "⚠️";
+  else if (type === "success") icon = "✅";
+  else if (type === "error") icon = "❌";
+  else if (type === "info") icon = "🔮"; // Default to crystal ball for HyDE/LLM notice
+
+  toast.innerHTML = `
+    <span>${icon}</span>
+    <span style="flex: 1;">${message}</span>
+  `;
+
+  container.appendChild(toast);
+
+  // Auto-remove after 4 seconds
+  setTimeout(() => {
+    toast.classList.add("toast-fade-out");
+    setTimeout(() => {
+      toast.remove();
+      if (container.children.length === 0) {
+        container.remove();
+      }
+    }, 300);
+  }, 4000);
+}
+
