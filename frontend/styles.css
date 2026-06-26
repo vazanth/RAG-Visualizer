@@ -2050,3 +2050,106 @@ input[type="range"]::-moz-range-thumb {
  
  
  
+
+/* ============================================================
+   MOBILE RESPONSIVENESS MEDIA QUERIES
+   ============================================================ */
+@media (max-width: 1024px) {
+  .app-main {
+    grid-template-columns: 1fr !important;
+    height: auto !important;
+  }
+
+  .panel {
+    border-right: none !important;
+    border-bottom: 1px solid var(--border-default) !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow-y: visible !important;
+  }
+
+  #config-panel {
+    order: 1;
+  }
+
+  #xray-panel {
+    order: 2;
+    min-height: 450px;
+    height: 600px !important; /* Contain document viewer / vector map height */
+  }
+
+  #inspector-panel {
+    order: 3;
+    max-height: 500px !important;
+  }
+
+  .canvas-wrapper {
+    height: 350px !important;
+  }
+
+  .arena-modal-content {
+    width: 95% !important;
+    height: 90% !important;
+    max-height: 90% !important;
+    padding: var(--space-md) !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .app-header {
+    padding: var(--space-sm) var(--space-md) !important;
+    flex-direction: column;
+    gap: var(--space-sm);
+    align-items: flex-start;
+  }
+
+  .strategy-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: var(--space-sm) !important;
+  }
+
+  .arena-columns {
+    flex-direction: column !important;
+    gap: var(--space-md) !important;
+  }
+
+  .arena-col {
+    width: 100% !important;
+    border-right: none !important;
+    border-bottom: 1px solid var(--border-default) !important;
+    padding-bottom: var(--space-md) !important;
+  }
+
+  .verdict-details-grid {
+    grid-template-columns: 1fr !important;
+    gap: var(--space-md) !important;
+  }
+
+  .arena-query-bar {
+    flex-direction: column !important;
+    gap: var(--space-sm) !important;
+  }
+
+  .arena-query-bar button {
+    width: 100% !important;
+  }
+
+  .query-input-wrapper {
+    flex-direction: column !important;
+    gap: var(--space-sm) !important;
+  }
+
+  .query-input-wrapper select,
+  .query-input-wrapper input,
+  .query-input-wrapper button {
+    width: 100% !important;
+  }
+
+  .score-col-bar {
+    display: none !important; /* Hide visual score comparison bar to save screen width */
+  }
+}
